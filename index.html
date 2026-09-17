@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Lettore DAISY</title>
+        <link rel="icon" type="image/svg+xml" href="icona_app_daisy.svg">
+        
+        <!-- CONFIGURAZIONE PWA (Per installarla su Android) -->
+        <meta name="theme-color" content="#000000">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
+        <meta name="apple-mobile-web-app-title" content="Lettore DAISY">
+        
+<!-- Manifest incorporato corretto -->
+<link rel="manifest" href="data:application/manifest+json;charset=utf-8,{
+    %22name%22: %22Lettore DAISY%22,
+    %22short_name%22: %22DAISY%22,
+    %22start_url%22: %22index.html%22,
+    %22display%22: %22standalone%22,
+    %22background_color%22: %22%23000000%22,
+    %22theme_color%22: %22%23fbbf24%22,
+    %22icons%22: [
+        {
+            %22src%22: %22icona_app_daisy.svg%22,
+            %22sizes%22: %22any%22,
+            %22type%22: %22image/svg+xml%22
+        }
+    ]
+}">
+    
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            body { background-color: #000000; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; }
+            .card { background-color: #233040; border-radius: 1.25rem; padding: 1.25rem; margin-bottom: 1.5rem; }
+            .icon-box { border-radius: 0.75rem; width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.25rem; overflow: hidden;}
+            .bg-yellow-brand { background-color: #fbbf24; color: #000000; }
+            .bg-salmon-brand { background-color: #f87171; color: #000000; }
+            .text-yellow-brand { color: #fbbf24; }
+        </style>
+    </head>
+<body class="p-4 max-w-md mx-auto pb-20">
+
+    <audio id="audioPlayer" class="hidden"></audio>
+
+    <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center gap-4">
+            <div class="icon-box bg-yellow-brand p-0 overflow-hidden flex items-center justify-center">
+                <svg
+                `class="w-full h-full"`
+                width="345.00394mm"
+                height="345.00394mm"
+                viewBox="40 30 265 265"
+                version="1.1"
+                id="svg1"
+                xml:space="preserve"
+                xmlns="http://www.w3.org/2000/svg"
+                xmlns:svg="http://www.w3.org/2000/svg"><defs
+                  id="defs1" /><g
+                  id="layer1"
+                  transform="translate(67.501968,3.5124836)"><rect
+                    style="fill:#f2b705;fill-opacity:1;stroke-width:0.264583"
+                    id="rect1"
+                    width="345.00394"
+                    height="345.00394"
+                    x="-67.501968"
+                    y="-3.5124836" /><path
+                    style="fill:#233040;fill-opacity:1;stroke-width:2.0534"
+                    d="m 98.726216,262.03941 c -4.07064,-1.06132 -8.17589,-3.36402 -9.80458,-5.49954 -1.23764,-1.62241 -2.29753,-2.17371 -7.23304,-3.76031 -11.31649,-3.63761 -26.877532,-6.80574 -38.926976,-7.92526 -7.470214,-0.69383 -20.645541,-0.69323 -27.438928,0.001 -12.9180429,1.32025 -13.3467639,1.32334 -14.2107739,0.0886 -0.86242598,-1.23135 -0.55381798,-4.32863 3.571668,-35.85078 1.987004,-15.18229 2.03389,-15.31081 6.4065439,-17.553 3.181088,-1.63144 3.689231,-1.42227 3.689231,1.51737 0,1.96001 -0.306379,2.87248 -1.321992,3.93896 -1.238019,1.30008 -1.485454,2.69106 -3.8951159,21.89826 -1.415211,11.28048 -2.470719,20.59818 -2.345581,20.70549 0.125142,0.10738 1.939026,-0.001 4.0309329,-0.24441 20.274111,-2.34532 44.421381,-0.1468 65.619081,5.98121 2.02274,0.58439 3.56767,0.88497 3.4332,0.66703 -0.13441,-0.21746 -3.74554,-2.14592 -8.02455,-4.28495 -16.261955,-8.13022 -32.057748,-12.05665 -48.600114,-12.08128 -5.187971,-0.004 -7.29301,-0.20388 -7.72046,-0.71887 -0.425752,-0.51321 -0.217482,-3.76939 0.75578,-11.81791 0.738886,-6.11032 1.842683,-15.51041 2.452912,-20.88953 1.246892,-10.99151 1.954434,-14.29936 4.339546,-20.28768 8.336635,-20.93103 28.554168,-38.96294 52.402676,-46.73796 10.59791,-3.45523 15.55372,-4.1545 29.340584,-4.1413 10.20625,0.005 12.84545,0.19108 18.05398,1.23682 15.32939,3.07806 30.25327,10.39313 42.43198,20.79844 7.79169,6.65663 15.86741,17.63647 19.89645,27.04991 3.78041,8.83249 3.84738,9.22535 8.77604,51.4508 0.22892,1.96122 0.1119,2.91109 -0.40812,3.32574 -0.41409,0.33021 -4.71614,0.71471 -9.96529,0.89035 -15.08812,0.50536 -27.32618,3.35205 -41.83465,9.73099 -5.2953,2.32799 -11.86789,5.8546 -11.53389,6.18858 0.11588,0.116 1.45659,-0.16543 2.98341,-0.61659 5.35408,-1.59013 18.18424,-4.08407 26.36687,-5.12506 15.10531,-1.92185 22.34506,-1.98645 42.05795,-0.37548 0.58202,0.046 0.93377,-0.24979 0.86957,-0.73511 -0.0579,-0.44855 -1.23477,-9.73949 -2.61229,-20.64712 -2.34427,-18.56354 -2.58931,-19.92086 -3.83159,-21.22037 -1.0215,-1.06857 -1.32697,-1.975 -1.32697,-3.93896 0,-2.97829 0.56065,-3.18047 4.03955,-1.45663 4.37152,2.16598 3.95701,0.52205 7.87829,31.25371 2.18885,17.15316 2.51605,20.81065 1.94279,21.71431 -0.83175,1.31108 -3.25339,1.3835 -13.13885,0.39176 -17.0752,-1.71277 -36.12836,-0.1529 -55.05607,4.5094 -14.33228,3.53022 -16.51341,4.34935 -20.10081,7.55012 -4.26461,3.80561 -8.07678,5.26856 -14.40173,5.5269 -2.93273,0.12088 -5.97747,-0.0812 -7.606664,-0.50847 z m 3.531604,-30.26493 c 0,-15.40167 -0.13658,-18.7655 -0.81685,-20.08051 -3.356984,-6.49166 -12.387894,-16.32353 -19.323834,-21.0374 -4.81355,-3.2712 -13.41899,-7.64293 -18.43671,-9.36607 -5.51254,-1.89251 -14.478364,-3.79569 -19.696286,-4.17971 l -4.754272,-0.35 -0.001,1.57574 c -5.88e-4,0.86637 -0.978593,9.59164 -2.173372,19.38871 -1.194744,9.79732 -2.172293,18.17174 -2.172293,18.60968 0,0.5503 0.59742,0.79622 1.933466,0.79622 5.229046,0 16.426151,2.48563 25.819617,5.7319 13.08526,4.52225 26.49571,13.35844 35.00326,23.06511 2.09194,2.38634 3.986804,4.34091 4.210984,4.34297 0.22408,0.001 0.4074,-8.32144 0.4074,-18.49664 z m 8.69433,15.64795 c 9.06459,-10.7833 23.71799,-20.29131 39.11137,-25.37826 6.93526,-2.29174 18.5227,-4.90654 21.81105,-4.92159 3.62074,-0.008 3.57794,0.93016 0.92643,-20.44579 l -2.41649,-19.48142 -4.49375,0.126 c -12.2898,0.3357 -28.87173,6.55809 -40.18295,15.07894 -6.15826,4.6389 -10.12789,8.81963 -14.64037,15.4188 l -3.10436,4.54021 -0.009,18.95955 c -0.004,10.42783 0.12552,18.95958 0.29573,18.95958 0.17165,0 1.3913,-1.28345 2.71012,-2.8526 z M 85.414246,241.9406 c 0,-0.52383 -9.02432,-6.53606 -13.04037,-8.68804 -11.57091,-6.20062 -27.068692,-10.51888 -40.750839,-11.35392 -2.443988,-0.15031 -2.4451,-0.15115 -2.607669,-2.36741 -0.08943,-1.22009 0.705205,-9.29251 1.765855,-17.93853 1.060681,-8.64665 1.928524,-16.28229 1.928524,-16.96884 v -1.24806 l -2.726104,1.48361 c -1.499346,0.81639 -2.964774,1.77115 -3.25643,2.12286 -0.430559,0.51874 -4.011339,28.37316 -4.485262,34.88965 l -0.127354,1.75258 5.976811,0.25704 c 17.391366,0.74686 36.713168,6.5056 52.704368,15.70857 4.52519,2.60422 4.61851,2.65151 4.61851,2.35049 z m 50.802824,-5.9426 c 14.23945,-7.10584 29.94616,-11.30619 45.47499,-12.16097 l 6.35442,-0.34943 -0.23128,-1.41241 c -0.12897,-0.77674 -0.59716,-4.59081 -1.04384,-8.47559 -2.44401,-21.23615 -3.08954,-26.06333 -3.56077,-26.63083 -0.28552,-0.34428 -1.74571,-1.29297 -3.24515,-2.10936 -2.66173,-1.44874 -2.7259,-1.45651 -2.7259,-0.34144 0,0.6281 0.99424,9.1115 2.20992,18.85158 1.21536,9.74009 2.00992,17.88084 1.76567,18.09068 -0.24391,0.20967 -3.5911,0.6795 -7.43723,1.04343 -11.82264,1.11943 -26.68642,5.53136 -36.20254,10.74604 -3.69167,2.02253 -11.95352,7.65525 -11.95352,8.14914 0,0.15776 1.03924,-0.32238 2.30939,-1.06599 1.26959,-0.74357 4.99843,-2.69422 8.28584,-4.33485 z M 107.6465,202.12628 c 1.31985,-1.95762 3.94812,-5.08537 5.84069,-6.95047 1.89281,-1.86453 3.44099,-3.56906 3.44099,-3.78755 0,-0.2188 -1.4058,-1.02099 -3.1243,-1.78341 -5.70097,-2.52859 -13.59754,-2.24183 -19.286744,0.70001 l -1.5067,0.77903 3.97481,4.54638 c 2.18611,2.50064 4.816964,5.78755 5.846204,7.30453 1.02937,1.5171 1.99368,2.75655 2.14314,2.75474 0.14935,-0.001 1.35189,-1.60523 2.67191,-3.56326 z m -15.983904,-17.1246 c 2.09198,-1.08062 5.09925,-2.2397 6.68281,-2.57626 6.751334,-1.43438 14.729934,-0.30234 20.598974,2.92284 l 3.37384,1.85448 2.82452,-1.90043 c 1.5533,-1.04542 3.21366,-2.13675 3.68936,-2.42497 0.74424,-0.45099 0.63796,-0.715 -0.76545,-1.90081 -2.33556,-1.97255 -9.77022,-5.53219 -13.56179,-6.49264 -4.22268,-1.06946 -14.14709,-1.05887 -18.767014,0.0203 -3.79662,0.88744 -11.23514,4.33445 -13.79948,6.39519 l -1.57413,1.26462 3.4758,2.49163 c 1.91173,1.3697 3.59807,2.45016 3.74749,2.40061 0.14952,-0.0494 1.98326,-0.97462 4.07507,-2.05537 z m -14.39712,-8.35093 c 7.77133,-6.37512 20.52399,-10.1518 31.319624,-9.27584 8.77924,0.71232 18.79682,4.61197 24.10357,9.38298 l 2.69807,2.42589 4.4129,-1.80425 4.41288,-1.80458 -2.62449,-2.37595 c -6.15405,-5.57139 -14.35848,-9.93 -23.37161,-12.41578 -4.78163,-1.31869 -6.24736,-1.47502 -13.51347,-1.44068 -6.473464,0.0312 -9.008164,0.27123 -12.320634,1.17028 -5.65716,1.53552 -11.69298,4.10803 -15.67175,6.67954 -4.52168,2.9229 -10.36851,7.6643 -10.17311,8.25057 0.12738,0.3822 6.3385,3.37523 7.47038,3.59952 0.15146,0.0298 1.61745,-1.04649 3.25764,-2.3917 z m -43.345701,-1.95333 c 0.523578,-3.07641 1.514147,-3.74785 5.549771,-3.76225 3.247606,-0.006 3.313983,-0.041 4.915277,-2.30932 2.932818,-4.15124 9.693694,-10.79054 15.087193,-14.81573 17.76413,-13.25766 39.63686,-18.04951 61.676414,-13.51235 16.87934,3.47465 32.52488,13.31322 44.203,27.79658 2.27517,2.82155 2.33303,2.85234 5.32806,2.86084 1.66561,0.002 3.3648,0.2211 3.77574,0.48195 0.4113,0.26008 1.04519,1.64575 1.40918,3.07876 0.58312,2.29613 0.90086,2.68774 2.6792,3.30362 1.96649,0.68092 2.00873,0.66776 1.64363,-0.50609 -0.81848,-2.63559 -4.59987,-9.5473 -7.05022,-12.88683 -12.15799,-16.56916 -29.39365,-27.59916 -50.23176,-32.1458 -5.00313,-1.09156 -7.20998,-1.24473 -17.93067,-1.24463 -13.221624,1e-4 -17.455404,0.59356 -27.438914,3.84782 -18.75149,6.11176 -36.521034,20.69514 -45.266667,37.14924 -1.191243,2.24138 -2.326891,4.61752 -2.523607,5.2802 -0.349364,1.17653 -0.309522,1.18821 1.704736,0.49058 1.852901,-0.64147 2.103883,-0.95724 2.469637,-3.10659 z m 28.419291,-4.33691 c 3.85241,-3.92332 12.00531,-9.50433 17.78484,-12.17457 2.28226,-1.0548 6.79011,-2.58815 10.01759,-3.4078 5.31746,-1.35045 6.7344,-1.48557 15.104764,-1.4441 8.1082,0.0398 9.87254,0.21596 14.43866,1.4384 10.88991,2.91572 19.60823,7.65324 26.83639,14.58262 l 4.36568,4.18579 4.48294,-0.85739 c 2.46523,-0.47175 4.48255,-1.06966 4.48255,-1.32875 0,-0.2589 -2.50622,-2.97206 -5.56939,-6.02827 -12.09229,-12.06656 -26.58406,-18.82953 -43.8318,-20.45617 -19.692864,-1.85725 -40.491804,6.08949 -55.150268,21.07116 -3.556526,3.63527 -4.994357,5.44993 -4.574858,5.77325 0.102189,0.0773 1.897168,0.51877 3.989019,0.97722 2.091905,0.45834 3.933333,0.86485 4.092103,0.90251 0.15896,0.0374 1.74809,-1.41735 3.53178,-3.2339 z m 5.48169,-53.34075 C 78.351526,106.16303 132.95264,48.669023 136.19209,45.026663 l 2.05316,-2.30934 h 4.28331 c 2.35584,0 4.2837,0.17024 4.2837,0.37658 0,0.20714 -2.3878,2.83533 -5.30595,5.84066 -2.9184,3.00557 -11.29239,11.8218 -18.60968,19.59145 -7.31697,7.769962 -16.24254,17.183232 -19.83453,20.919192 -8.359294,8.69282 -23.828524,25.043745 -26.858974,28.389545 l -2.33757,2.58116 h -4.66935 -4.6694 z m 27.50948,-7.01177 c -1.86767,-0.30454 -3.39592,-0.72443 -3.39592,-0.93272 0,-0.20827 1.34257,-1.70451 2.98331,-3.32489 l 2.98324,-2.94615 6.400644,-0.0216 c 6.11227,-0.0211 6.56351,-0.10292 10.02146,-1.80632 4.27542,-2.104585 8.09334,-6.039625 10.13149,-10.442595 1.12786,-2.43638 1.38826,-3.84169 1.41098,-7.60684 0.007,-2.54024 -0.15606,-5.59633 -0.37886,-6.79191 -0.37573,-2.009482 -0.24569,-2.357752 1.72147,-4.617812 1.17014,-1.34466 2.27658,-2.29551 2.45848,-2.11408 0.18331,0.18323 0.86213,1.77104 1.5115,3.53158 0.91281,2.4731 1.18531,4.434632 1.20025,8.633912 0.0217,6.77591 -1.38591,11.70492 -4.65147,16.26569 l -2.28091,3.184645 1.58196,-0.38693 c 2.91923,-0.714005 12.85688,-5.741175 17.29256,-8.747725 2.41622,-1.63741 5.98254,-4.43519 7.92518,-6.21718 l 3.53208,-3.23933 -2.98891,-3.05197 c -3.61687,-3.69428 -9.72288,-8.090922 -15.53061,-11.184302 -2.36582,-1.25953 -4.37152,-2.33999 -4.45727,-2.40061 -0.0822,-0.0598 0.96237,-1.26045 2.32882,-2.66662 l 2.48468,-2.55633 3.10466,1.75074 c 7.90053,4.4545 17.21694,11.74315 21.22354,16.604242 2.50939,3.04387 2.27142,4.07262 -1.95401,8.46435 -10.03631,10.42902 -22.11578,17.439285 -36.54009,21.205745 -5.53829,1.44604 -7.29868,1.65088 -15.48541,1.80141 -5.08029,0.0917 -10.765124,-0.0778 -12.632844,-0.38423 z m -27.41621,-8.80778 C 60.300296,96.861145 50.448271,88.863935 47.340521,84.499185 c -1.680263,-2.35951 -1.053283,-3.8333 3.563155,-8.37541 10.96976,-10.793392 23.86472,-17.777782 39.12894,-21.193152 5.49693,-1.23031 18.255994,-1.65221 24.200734,-0.79997 2.6774,0.38394 4.86706,0.84586 4.8653,1.0263 -0.001,0.18212 -1.48308,1.87731 -3.29316,3.77029 -2.16981,2.26966 -3.57188,3.33329 -4.1177,3.12381 -0.45514,-0.17506 -2.4583,-0.46893 -4.45202,-0.65423 -3.97908,-0.37004 -8.812564,0.58669 -12.518894,2.47726 -5.09382,2.59873 -9.42955,9.00948 -10.51222,15.544152 -0.46829,2.82542 -0.39707,4.14544 0.40802,7.56374 l 0.97513,4.1412 -2.09875,2.14917 c -1.15437,1.18233 -2.26108,2.14951 -2.45942,2.14951 -0.69577,0 -2.70763,-5.66972 -3.31318,-9.33667 -1.08527,-6.57129 0.90308,-14.522592 4.96835,-19.868182 1.19317,-1.56872 1.97071,-2.85251 1.72803,-2.85251 -0.7855,0 -7.25577,2.75798 -11.4681,4.88823 -5.14793,2.60365 -10.678,6.50713 -15.24113,10.758242 l -3.531728,3.29052 3.260048,3.0748 c 3.80972,3.59363 11.38401,8.79114 16.74602,11.49139 l 3.77193,1.89931 -2.35781,2.402935 c -1.29673,1.32094 -2.61837,2.40217 -2.93694,2.40217 -0.31856,0 -2.45205,-1.06726 -4.7411,-2.37188 z m 24.7621,-23.121285 c -1.07174,-0.65371 -2.03877,-1.91659 -2.60753,-3.406352 -1.20885,-3.16513 -0.32239,-6.08683 2.40908,-7.94096 2.75713,-1.87109 6.66441,-1.46861 8.785734,0.90577 2.00759,2.24694 2.41955,4.13528 1.48623,6.81323 -1.44327,4.141132 -6.340034,5.905162 -10.073514,3.628312 z"
+                    id="path1" /></g></svg>
+            </div>
+            <div class="flex flex-col justify-center">
+                <p class="text-xs text-yellow-brand font-bold uppercase tracking-wider whitespace-nowrap">Lettore di libri DAISY</p>
+                <h1 class="text-xl font-bold leading-tight whitespace-nowrap">Ascolta senza barriere</h1>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="flex items-center gap-4 mb-3">
+            <div>
+                <p class="text-xs text-yellow-brand font-bold uppercase tracking-wider">Libro in ascolto</p>
+                <h2 id="bookTitle" class="text-xl font-bold">In attesa del libro...</h2>
+            </div>
+        </div>
+        <div class="w-full bg-gray-700 h-1.5 rounded-full mt-2">
+            <div id="bookProgressBar" class="bg-salmon-brand h-1.5 rounded-full" style="width: 0%;"></div>
+        </div>
+        <div class="flex justify-between text-xs text-gray-400 mt-1">
+            <span id="bookTimeCurrent">0:00:00</span>
+            <span id="bookTimeTotal">0:00:00</span>
+        </div>
+    </div>
+
+    <label id="uploadLabel" class="card flex items-center gap-4 cursor-pointer hover:bg-[#2c3d52] transition-colors">
+        <div class="icon-box bg-yellow-brand text-black">📁</div>
+        <div class="flex-1">
+            <h3 class="font-bold">Carica un libro</h3>
+            <p class="text-xs text-gray-400">Pacchetto DAISY .zip</p>
+        </div>
+        <div class="text-yellow-brand text-xl">›</div>
+        <input type="file" id="daisyFileInput" accept=".zip" class="hidden">
+    </label>
+
+    <div class="w-full">
+        
+        <div class="card">
+            <div class="flex justify-between items-end mb-2">
+                <div>
+                    <p class="text-xs text-yellow-brand font-bold uppercase tracking-wider">Capitolo <span id="currentChapter">1</span> di <span id="totalChapters">?</span></p>
+                    <h2 id="chapterTitle" class="text-xl font-bold">Seleziona un libro</h2>
+                </div>
+                <button id="speedBtn" class="text-yellow-brand font-bold whitespace-nowrap hover:opacity-80 transition-opacity">1,00 x</button>
+            </div>
+            
+            <div class="w-full h-4 mt-4 mb-2 cursor-pointer relative" id="chapterProgressContainer">
+                <div class="absolute inset-0 flex items-center">
+                    <div class="w-full bg-gray-700 h-1.5 rounded-full pointer-events-none"></div>
+                </div>
+                <div id="chapterProgressBar" class="absolute top-1/2 left-0 transform -translate-y-1/2 bg-yellow-brand h-1.5 rounded-full pointer-events-none" style="width: 0%;"></div>
+            </div>
+            <div class="flex justify-between text-xs text-gray-400">
+                <span id="chapterTimeCurrent">0:00</span>
+                <span id="chapterTimeTotal">0:00</span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 relative">
+            <button id="prevBtn" class="card m-0 flex flex-col items-center justify-center py-3 px-1 hover:bg-[#2c3d52]">
+                <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                <span class="text-[13px] leading-tight mt-1 text-center pr-2">Capitolo prec.</span>
+            </button>
+            <button id="nextBtn" class="card m-0 flex flex-col items-center justify-center py-3 px-1 hover:bg-[#2c3d52]">
+                <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                <span class="text-[13px] leading-tight mt-1 text-center pl-2">Capitolo succ.</span>
+            </button>
+            <button id="skipBackBtn" class="card m-0 flex flex-col items-center justify-center py-3 px-1 hover:bg-[#2c3d52]">
+                <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+                <span class="text-[13px] leading-tight mt-1 text-center pr-2">-15 sec</span>
+            </button>
+            <button id="skipForwardBtn" class="card m-0 flex flex-col items-center justify-center py-3 px-1 hover:bg-[#2c3d52]">
+                <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+                <span class="text-[13px] leading-tight mt-1 text-center pl-2">+30 sec</span>
+            </button>
+            
+            <button id="playBtn" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-brand ring-[8px] ring-[#000000] rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
+                <svg id="playSvg" class="w-8 h-8 fill-current text-[#000000] -translate-x-[1px]" viewBox="0 0 24 24">
+                    <path id="playIconPath" d="M8 5v14l11-7z"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="mt-3">
+            <button id="addBookmarkBtn" class="w-full bg-[#233040] hover:bg-yellow-brand hover:text-black text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center border border-gray-700">
+                Aggiungi Segnalibro
+            </button>
+            <div id="bookmarksList" class="mt-4 space-y-2">
+                </div>
+        </div>
+    </div>
+
+    <div id="resumeModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 hidden">
+        <div class="bg-[#233040] p-6 rounded-2xl max-w-sm w-full mx-4 border border-gray-700 shadow-2xl">
+            <h3 class="text-xl font-bold text-white mb-2">Ascolto precedente</h3>
+            <p id="resumeModalText" class="text-gray-300 mb-6 text-sm">Trovato un ascolto precedente per questo libro. Vuoi riprendere?</p>
+            <div class="flex gap-4">
+                <button id="resumeModalNo" class="flex-1 py-3 rounded-xl bg-[#131b26] text-white font-bold hover:bg-gray-800 transition-colors">No</button>
+                <button id="resumeModalYes" class="flex-1 py-3 rounded-xl bg-yellow-brand text-[#131b26] font-bold hover:opacity-90 transition-opacity">Sì</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <script>
+        const fileInput = document.getElementById('daisyFileInput');
+        const uploadLabel = document.getElementById('uploadLabel');
+        const uiBookTitle = document.getElementById('bookTitle');
+        const uiChapterTitle = document.getElementById('chapterTitle');
+        const uiTotalChapters = document.getElementById('totalChapters');
+        const uiCurrentChapter = document.getElementById('currentChapter');
+        const playBtn = document.getElementById('playBtn');
+        const playSvg = document.getElementById('playSvg');
+        const playIconPath = document.getElementById('playIconPath');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const skipBackBtn = document.getElementById('skipBackBtn');
+        const skipForwardBtn = document.getElementById('skipForwardBtn');
+        const speedBtn = document.getElementById('speedBtn');
+        const audioPlayer = document.getElementById('audioPlayer');
+        
+        const chapterTimeCurrent = document.getElementById('chapterTimeCurrent');
+        const chapterTimeTotal = document.getElementById('chapterTimeTotal');
+        const chapterProgressBar = document.getElementById('chapterProgressBar');
+        const chapterProgressContainer = document.getElementById('chapterProgressContainer');
+        const bookTimeCurrent = document.getElementById('bookTimeCurrent');
+        const bookTimeTotal = document.getElementById('bookTimeTotal');
+        const bookProgressBar = document.getElementById('bookProgressBar');
+        
+        const addBookmarkBtn = document.getElementById('addBookmarkBtn');
+        const bookmarksList = document.getElementById('bookmarksList');
+        
+        let loadedZip = null;
+        let chaptersList = [];
+        let isPlaying = false;
+        let currentChapterIndex = 0;
+        
+        let currentChapterAudioList = []; 
+        let currentSnippetIndex = 0;
+        let chapterTotalSeconds = 0;
+        let bookTotalSeconds = 0;
+        let pendingSeekTime = 0; 
+        
+        const playbackSpeeds = [1.0, 1.25, 1.5, 2.0, 0.75];
+        let currentSpeedIndex = 0;
+        
+        let bookmarks = [];
+
+        const svgPathPlay = "M8 5v14l11-7z";
+        const svgPathPause = "M6 19h4V5H6v14zm8-14v14h4V5h-4z";
+
+        function updatePlayIcon() {
+            if (isPlaying) {
+                playIconPath.setAttribute('d', svgPathPause);
+                playSvg.classList.remove('-translate-x-[1px]');
+            } else {
+                playIconPath.setAttribute('d', svgPathPlay);
+                playSvg.classList.add('-translate-x-[1px]');
+            }
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds) || seconds < 0) return "0:00";
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            if (h > 0) {
+                return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }
+            return `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function parseSmilTime(timeStr) {
+            if (!timeStr) return 0;
+            let s = timeStr.toLowerCase().replace('npt=', '').replace('s', '').trim();
+            if (s.includes(':')) {
+                let parts = s.split(':');
+                if (parts.length === 3) return parseInt(parts[0])*3600 + parseInt(parts[1])*60 + parseFloat(parts[2]);
+                if (parts.length === 2) return parseInt(parts[0])*60 + parseFloat(parts[1]);
+            }
+            return parseFloat(s) || 0;
+        }
+
+        function loadBookmarks() {
+            if(!uiBookTitle.textContent) return;
+            const saved = localStorage.getItem('daisy_bookmarks_' + uiBookTitle.textContent);
+            bookmarks = saved ? JSON.parse(saved) : [];
+            renderBookmarks();
+        }
+
+        function saveBookmarks() {
+            localStorage.setItem('daisy_bookmarks_' + uiBookTitle.textContent, JSON.stringify(bookmarks));
+            renderBookmarks();
+        }
+
+        function renderBookmarks() {
+            bookmarksList.innerHTML = '';
+            bookmarks.forEach((bm, index) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-[#233040] p-3 rounded-lg border border-gray-700";
+                div.innerHTML = `
+                    <div class="flex-1 cursor-pointer hover:text-yellow-brand truncate pr-2" onclick="goToBookmark(${index})">
+                        <p class="text-xs text-gray-400">Capitolo ${bm.chapterIndex + 1} - ${bm.displayTime}</p>
+                        <p class="text-sm font-bold truncate">${bm.chapterTitle}</p>
+                    </div>
+                    <button onclick="deleteBookmark(${index})" class="text-gray-500 hover:text-salmon-brand p-2 bg-[#000000] rounded-md transition-colors">🗑️</button>
+                `;
+                bookmarksList.appendChild(div);
+            });
+        }
+
+        function saveLastPosition() {
+            if (!uiBookTitle.textContent || chaptersList.length === 0) return;
+            if (currentChapterAudioList.length === 0 || !currentChapterAudioList[currentSnippetIndex]) return;
+            
+            const absoluteCurrentTime = currentChapterAudioList[currentSnippetIndex].startOffset + audioPlayer.currentTime;
+            const state = {
+                chapterIndex: currentChapterIndex,
+                time: absoluteCurrentTime
+            };
+            localStorage.setItem('daisy_progress_' + uiBookTitle.textContent, JSON.stringify(state));
+        }
+
+        function getLastPosition() {
+            if (!uiBookTitle.textContent) return null;
+            const saved = localStorage.getItem('daisy_progress_' + uiBookTitle.textContent);
+            return saved ? JSON.parse(saved) : null;
+        }
+
+        function askResume(chapterText, timeText) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('resumeModal');
+                const modalText = document.getElementById('resumeModalText');
+                const btnYes = document.getElementById('resumeModalYes');
+                const btnNo = document.getElementById('resumeModalNo');
+
+                modalText.textContent = `Trovato un ascolto precedente per questo libro.\nVuoi riprendere dal Capitolo ${chapterText} (${timeText})?`;
+                modal.classList.remove('hidden');
+
+                const handleYes = () => {
+                    modal.classList.add('hidden');
+                    cleanup();
+                    resolve(true);
+                };
+
+                const handleNo = () => {
+                    modal.classList.add('hidden');
+                    cleanup();
+                    resolve(false);
+                };
+
+                const cleanup = () => {
+                    btnYes.removeEventListener('click', handleYes);
+                    btnNo.removeEventListener('click', handleNo);
+                };
+
+                btnYes.addEventListener('click', handleYes);
+                btnNo.addEventListener('click', handleNo);
+            });
+        }
+
+        addBookmarkBtn.addEventListener('click', () => {
+            if (currentChapterAudioList.length === 0) return;
+            let absoluteCurrentTime = currentChapterAudioList[currentSnippetIndex].startOffset + audioPlayer.currentTime;
+            bookmarks.push({
+                chapterIndex: currentChapterIndex,
+                chapterTitle: chaptersList[currentChapterIndex].title,
+                time: absoluteCurrentTime,
+                displayTime: formatTime(absoluteCurrentTime)
+            });
+            saveBookmarks();
+        });
+
+        window.goToBookmark = async function(index) {
+            const bm = bookmarks[index];
+            if (bm.chapterIndex !== currentChapterIndex) {
+                await playChapter(bm.chapterIndex, true, bm.time);
+            } else {
+                seekToTime(bm.time);
+                if (!isPlaying) {
+                    audioPlayer.play();
+                    isPlaying = true;
+                    updatePlayIcon();
+                }
+            }
+        }
+
+        window.deleteBookmark = function(index) {
+            bookmarks.splice(index, 1);
+            saveBookmarks();
+        }
+
+        fileInput.addEventListener('change', async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            uiBookTitle.textContent = "Caricamento in corso...";
+            chaptersList = [];
+            bookTotalSeconds = 0;
+            bookmarksList.innerHTML = '';
+
+            if (file.name.toLowerCase().endsWith('.zip')) {
+                try {
+                    loadedZip = new JSZip();
+                    const zipContent = await loadedZip.loadAsync(file);
+                    
+                    let nccFile = null;
+                    zipContent.forEach(function (relativePath, zipEntry) {
+                        if (relativePath.toLowerCase().endsWith('ncc.html') || relativePath.toLowerCase().endsWith('ncc.htm')) {
+                            nccFile = zipEntry;
+                        }
+                    });
+
+                    if (nccFile) {
+                        const nccText = await nccFile.async("string");
+                        const parser = new DOMParser();
+                        const htmlDoc = parser.parseFromString(nccText, "text/html");
+                        
+                        const titleTag = htmlDoc.querySelector("title") || htmlDoc.querySelector("meta[name='dc:title']");
+                        if (titleTag) {
+                            uiBookTitle.textContent = titleTag.tagName.toLowerCase() === 'meta' ? titleTag.getAttribute('content') : titleTag.textContent;
+                            loadBookmarks();
+                        }
+
+                        const totalTimeMeta = htmlDoc.querySelector("meta[name='ncc:totalTime']");
+                        if (totalTimeMeta) {
+                            bookTotalSeconds = parseSmilTime(totalTimeMeta.getAttribute('content'));
+                            bookTimeTotal.textContent = formatTime(bookTotalSeconds);
+                        } else {
+                            bookTimeTotal.textContent = "N/D";
+                        }
+
+                        const allLinks = Array.from(htmlDoc.querySelectorAll("a"));
+                        const smilLinks = allLinks.filter(link => {
+                            const href = link.getAttribute('href');
+                            return href && href.toLowerCase().includes('.smil');
+                        });
+
+                        smilLinks.forEach(link => {
+                            chaptersList.push({
+                                title: link.textContent.trim() || "Capitolo senza titolo",
+                                smilTarget: link.getAttribute('href').split('#')[0]
+                            });
+                        });
+
+                        uiTotalChapters.textContent = chaptersList.length;
+
+                        if (chaptersList.length > 0) {
+                            uploadLabel.classList.add('hidden');
+
+                            const lastState = getLastPosition();
+                            let startChapter = 0;
+                            let startTime = 0;
+
+                            if (lastState && lastState.time > 0) {
+                                const minuttiFormattati = formatTime(lastState.time);
+                                const wantsToResume = await askResume(lastState.chapterIndex + 1, minuttiFormattati);
+                                if (wantsToResume) {
+                                    startChapter = lastState.chapterIndex;
+                                    startTime = lastState.time;
+                                }
+                            }
+
+                            await playChapter(startChapter, false, startTime);
+                        } else {
+                            uiChapterTitle.textContent = "Nessun capitolo trovato";
+                        }
+                    } else {
+                        uiBookTitle.textContent = "Formato 3.0 non ancora supportato";
+                    }
+                } catch (error) {
+                    console.error("Errore:", error);
+                    uiBookTitle.textContent = "Errore di caricamento";
+                }
+            }
+        });
+
+        async function loadChapterAudio(smilFileName, startTime = 0) {
+            if (!loadedZip) return;
+            
+            try {
+                const smilFile = Object.values(loadedZip.files).find(f => f.name.toLowerCase().endsWith(smilFileName.toLowerCase()));
+                if (!smilFile) return;
+
+                const smilText = await smilFile.async("string");
+                const parser = new DOMParser();
+                const smilDoc = parser.parseFromString(smilText, "text/xml");
+                
+                const audioNodes = Array.from(smilDoc.getElementsByTagName("audio"));
+                currentChapterAudioList = [];
+                chapterTotalSeconds = 0;
+
+                audioNodes.forEach(node => {
+                    let begin = parseSmilTime(node.getAttribute("clip-begin") || node.getAttribute("clipBegin"));
+                    let end = parseSmilTime(node.getAttribute("clip-end") || node.getAttribute("clipEnd"));
+                    let duration = end - begin;
+                    if (duration < 0 || isNaN(duration)) duration = 0;
+                    
+                    currentChapterAudioList.push({
+                        src: node.getAttribute("src"),
+                        duration: duration,
+                        startOffset: chapterTotalSeconds
+                    });
+                    chapterTotalSeconds += duration;
+                });
+
+                chapterTimeTotal.textContent = formatTime(chapterTotalSeconds);
+                chapterProgressBar.style.width = "0%";
+                
+                if (startTime > 0) {
+                    let startSnippet = 0;
+                    for (let i = 0; i < currentChapterAudioList.length; i++) {
+                        let snip = currentChapterAudioList[i];
+                        if (startTime >= snip.startOffset && startTime < (snip.startOffset + snip.duration)) {
+                            startSnippet = i;
+                            break;
+                        }
+                    }
+                    currentSnippetIndex = startSnippet;
+                    pendingSeekTime = startTime - currentChapterAudioList[startSnippet].startOffset;
+                } else {
+                    currentSnippetIndex = 0;
+                    pendingSeekTime = 0;
+                }
+                
+                await prepareSnippet(currentSnippetIndex);
+                
+            } catch (e) {
+                console.error("Errore nel caricamento del capitolo:", e);
+            }
+        }
+
+        async function prepareSnippet(index) {
+            if (index >= currentChapterAudioList.length) {
+                if (currentChapterIndex < chaptersList.length - 1) {
+                    playChapter(currentChapterIndex + 1, isPlaying);
+                } else {
+                    isPlaying = false;
+                    updatePlayIcon();
+                }
+                return;
+            }
+
+            const snippet = currentChapterAudioList[index];
+            const mp3File = Object.values(loadedZip.files).find(f => f.name.toLowerCase().endsWith(snippet.src.toLowerCase()));
+            
+            if (mp3File) {
+                const mp3Blob = await mp3File.async("blob");
+                const audioUrl = URL.createObjectURL(mp3Blob);
+                
+                audioPlayer.src = audioUrl;
+                audioPlayer.playbackRate = playbackSpeeds[currentSpeedIndex];
+                
+                audioPlayer.onloadedmetadata = () => {
+                    if (pendingSeekTime > 0) {
+                        audioPlayer.currentTime = pendingSeekTime;
+                        pendingSeekTime = 0;
+                    }
+                    if (isPlaying) {
+                        audioPlayer.play();
+                    }
+                };
+            } else {
+                currentSnippetIndex++;
+                prepareSnippet(currentSnippetIndex);
+            }
+        }
+
+        audioPlayer.addEventListener('ended', () => {
+            currentSnippetIndex++;
+            prepareSnippet(currentSnippetIndex);
+        });
+
+        audioPlayer.addEventListener('timeupdate', () => {
+            if (currentChapterAudioList.length === 0 || !currentChapterAudioList[currentSnippetIndex]) return;
+            
+            const currentSnippet = currentChapterAudioList[currentSnippetIndex];
+            const currentChapterTime = currentSnippet.startOffset + audioPlayer.currentTime;
+            
+            chapterTimeCurrent.textContent = formatTime(currentChapterTime);
+            
+            if (chapterTotalSeconds > 0) {
+                const chapterPercent = (currentChapterTime / chapterTotalSeconds) * 100;
+                chapterProgressBar.style.width = Math.min(chapterPercent, 100) + "%";
+            }
+
+            if (bookTotalSeconds > 0 && chaptersList.length > 0) {
+                const bookProgressPercent = ((currentChapterIndex + (currentChapterTime / chapterTotalSeconds)) / chaptersList.length) * 100;
+                bookProgressBar.style.width = Math.min(bookProgressPercent, 100) + "%";
+                const estimatedCurrentBookTime = (bookTotalSeconds / chaptersList.length) * (currentChapterIndex + (currentChapterTime / chapterTotalSeconds));
+                bookTimeCurrent.textContent = formatTime(estimatedCurrentBookTime);
+            }
+
+            saveLastPosition();
+        });
+
+        async function playChapter(index, autoPlay = true, startTime = 0) {
+            if (index < 0 || index >= chaptersList.length) return;
+            
+            currentChapterIndex = index;
+            uiChapterTitle.textContent = chaptersList[index].title;
+            uiCurrentChapter.textContent = currentChapterIndex + 1;
+            
+            audioPlayer.pause();
+            isPlaying = autoPlay;
+            updatePlayIcon();
+            
+            await loadChapterAudio(chaptersList[index].smilTarget, startTime);
+        }
+
+        function seekToTime(targetTime) {
+            if (currentChapterAudioList.length === 0) return;
+            
+            if (targetTime < 0) targetTime = 0;
+            if (targetTime > chapterTotalSeconds) targetTime = chapterTotalSeconds - 0.1;
+            
+            let newSnippetIndex = 0;
+            for (let i = 0; i < currentChapterAudioList.length; i++) {
+                let snip = currentChapterAudioList[i];
+                if (targetTime >= snip.startOffset && targetTime < (snip.startOffset + snip.duration)) {
+                    newSnippetIndex = i;
+                    break;
+                }
+            }
+            
+            let targetTimeInSnippet = targetTime - currentChapterAudioList[newSnippetIndex].startOffset;
+            
+            if (newSnippetIndex === currentSnippetIndex) {
+                audioPlayer.currentTime = targetTimeInSnippet;
+            } else {
+                currentSnippetIndex = newSnippetIndex;
+                pendingSeekTime = targetTimeInSnippet;
+                audioPlayer.pause(); 
+                prepareSnippet(currentSnippetIndex);
+            }
+        }
+
+        function jumpTime(secondsToAdd) {
+            if (currentChapterAudioList.length === 0) return;
+            let absoluteCurrentTime = currentChapterAudioList[currentSnippetIndex].startOffset + audioPlayer.currentTime;
+            seekToTime(absoluteCurrentTime + secondsToAdd);
+        }
+
+        chapterProgressContainer.addEventListener('click', (e) => {
+            if (currentChapterAudioList.length === 0 || chapterTotalSeconds === 0) return;
+            
+            const rect = chapterProgressContainer.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+            
+            const targetTime = percentage * chapterTotalSeconds;
+            seekToTime(targetTime);
+        });
+
+        prevBtn.addEventListener('click', () => playChapter(currentChapterIndex - 1, isPlaying));
+        nextBtn.addEventListener('click', () => playChapter(currentChapterIndex + 1, isPlaying));
+        skipBackBtn.addEventListener('click', () => jumpTime(-15));
+        skipForwardBtn.addEventListener('click', () => jumpTime(30));
+
+        playBtn.addEventListener('click', () => {
+            if (currentChapterAudioList.length === 0) return;
+            
+            if (isPlaying) {
+                audioPlayer.pause();
+            } else {
+                audioPlayer.play();
+            }
+            isPlaying = !isPlaying;
+            updatePlayIcon();
+        });
+
+        speedBtn.addEventListener('click', () => {
+            currentSpeedIndex = (currentSpeedIndex + 1) % playbackSpeeds.length;
+            const newSpeed = playbackSpeeds[currentSpeedIndex];
+            audioPlayer.playbackRate = newSpeed;
+            speedBtn.textContent = newSpeed.toFixed(2).replace('.', ',') + ' x';
+        });
+
+    </script>
+    <script>
+        // Registrazione del Service Worker per la PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    self.addEventListener('install', (e) => { self.skipWaiting(); });
+                    self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
+                    self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });
+                `;
+                const blob = new Blob([swCode], { type: 'text/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW error:', err));
+            });
+        }
+    </script>
+</body>
+</html>
