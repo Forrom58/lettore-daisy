@@ -649,13 +649,35 @@
 
     </script>
     <script>
-        // Registrazione del Service Worker per la PWA
+        // Registrazione Service Worker con Caching automatico
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 const swCode = `
+                    const CACHE_NAME = 'daisy-offline-v1';
+                    
                     self.addEventListener('install', (e) => { self.skipWaiting(); });
                     self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
-                    self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });
+                    
+                    self.addEventListener('fetch', (e) => {
+                        // Ignora le richieste che non sono di caricamento (es. i file ZIP locali)
+                        if (e.request.method !== 'GET') return;
+                        
+                        e.respondWith(
+                            fetch(e.request).then((response) => {
+                                // 1. Se c'è rete, scarica e mettine una copia in cache
+                                const clone = response.clone();
+                                caches.open(CACHE_NAME).then((cache) => {
+                                    cache.put(e.request, clone);
+                                });
+                                return response;
+                            }).catch(() => {
+                                // 2. Se sei offline, recupera il file dalla cache
+                                return caches.match(e.request).then((cached) => {
+                                    return cached || caches.match('index.html') || caches.match('./');
+                                });
+                            })
+                        );
+                    });
                 `;
                 const blob = new Blob([swCode], { type: 'text/javascript' });
                 const swUrl = URL.createObjectURL(blob);
