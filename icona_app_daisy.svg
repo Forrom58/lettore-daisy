@@ -7,7 +7,7 @@
    width="532"
    height="532"
    viewBox="0 0 532 532"
-   sodipodi:docname="icona_libro_daisy.svg"
+   sodipodi:docname="icona_app_daisy.svg"
    inkscape:version="1.4.2 (f4327f4, 2025-05-13)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -22,9 +22,9 @@
      inkscape:pageopacity="0.0"
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#6b6b6b"
-     inkscape:zoom="1.4304511"
-     inkscape:cx="265.65046"
-     inkscape:cy="266"
+     inkscape:zoom="1.3735941"
+     inkscape:cx="265.72624"
+     inkscape:cy="266.09025"
      inkscape:window-width="1920"
      inkscape:window-height="1001"
      inkscape:window-x="-9"
@@ -34,15 +34,15 @@
   <defs
      id="defs1" />
   <rect
-     style="fill:#f8ae07;fill-opacity:1"
+     style="fill:#f8ae07;fill-opacity:1;stroke-width:0.924444"
      id="rect18"
-     width="553.67151"
-     height="553.67151"
-     x="-10.835754"
-     y="-10.835754" />
+     width="512"
+     height="511.677"
+     x="10"
+     y="9.9999981" />
   <g
      id="g17"
-     transform="matrix(1.4451932,0,0,1.4451932,-371.84018,-275.30523)">
+     transform="matrix(1.3364222,0,0,1.3355792,-323.8338,-228.41018)">
     <g
        id="g15"
        transform="matrix(0.93303852,0,0,0.93303852,37.272415,13.787297)"
@@ -72,15 +72,15 @@
        id="path15" />
   </g>
   <rect
-     style="fill:#233040;fill-opacity:1;stroke-width:0.503605"
+     style="fill:#233040;fill-opacity:1;stroke-width:0.465555"
      id="rect12"
-     width="553.67151"
-     height="140.42101"
-     x="-10.835754"
-     y="402.76425" />
+     width="512"
+     height="129.77045"
+     x="10"
+     y="392.22955" />
   <g
      id="g2"
-     transform="translate(-4.5e-6,-90.45192)">
+     transform="matrix(0.92473604,0,0,0.92415268,20.020209,-63.577494)">
     <path
        id="path21"
        style="fill:none;fill-opacity:1;stroke:#233040;stroke-width:16.554;stroke-linecap:round;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1"
@@ -96,14 +96,14 @@
   </g>
   <text
      xml:space="preserve"
-     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:141.393px;font-family:'HP Simplified';-inkscape-font-specification:'HP Simplified, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:start;letter-spacing:0px;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#f8ae07;fill-opacity:1;stroke:none;stroke-width:4.52311;stroke-linecap:round;stroke-linejoin:bevel"
-     x="44.571274"
-     y="603.82355"
+     style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:121.297px;font-family:'HP Simplified';-inkscape-font-specification:'HP Simplified, Bold';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;text-align:start;letter-spacing:0px;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#f8ae07;fill-opacity:1;stroke:none;stroke-width:3.88023;stroke-linecap:round;stroke-linejoin:bevel"
+     x="70.393433"
+     y="573.73096"
      id="text12"
-     transform="scale(1.1730664,0.85246667)"><tspan
+     transform="scale(1.1734366,0.85219773)"><tspan
        sodipodi:role="line"
        id="tspan12"
-       x="44.571274"
-       y="603.82355"
-       style="fill:#f8ae07;fill-opacity:1;stroke-width:4.52311">DAISY</tspan></text>
+       x="70.393433"
+       y="573.73096"
+       style="fill:#f8ae07;fill-opacity:1;stroke-width:3.88023">DAISY</tspan></text>
 </svg>
