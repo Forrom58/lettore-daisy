@@ -12,21 +12,8 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="black">
         <meta name="apple-mobile-web-app-title" content="Lettore DAISY">
         
-<link rel="manifest" href="data:application/manifest+json;charset=utf-8,{
-    %22name%22: %22Lettore DAISY%22,
-    %22short_name%22: %22DAISY%22,
-    %22start_url%22: %22index.html%22,
-    %22display%22: %22standalone%22,
-    %22background_color%22: %22%23000000%22,
-    %22theme_color%22: %22%23fbbf24%22,
-    %22icons%22: [
-        {
-            %22src%22: %22icona_app_daisy.svg%22,
-            %22sizes%22: %22any%22,
-            %22type%22: %22image/svg+xml%22
-        }
-    ]
-}">
+        <!-- MANIFEST COMPATTATO SU UNA RIGA PER EVITARE ERRORI SU GITHUB -->
+        <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Lettore DAISY","short_name":"DAISY","start_url":"index.html","display":"standalone","background_color":"#000000","theme_color":"#fbbf24","icons":[{"src":"icona_app_daisy.svg","sizes":"any","type":"image/svg+xml"}]}'>
     
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
@@ -304,7 +291,7 @@
             isBlindMode = isBlind;
             localStorage.setItem('daisy_ui_mode', isBlind ? 'blind' : 'visual');
             modeModal.classList.add('hidden');
-            voceInizialeLetta = true; // Spegne il trigger di lettura se l'utente ha già cliccato
+            voceInizialeLetta = true; 
             
             if (isBlindMode) {
                 vistaIpovedente.classList.add('hidden');
@@ -320,7 +307,7 @@
         }
 
         btnModeVisual.addEventListener('click', (e) => {
-            e.stopPropagation(); // Evita che il tocco sul bottone riattivi la voce generale
+            e.stopPropagation(); 
             impostaModalita(false);
             parla("Hai scelto l'interfaccia visiva.");
         });
@@ -332,11 +319,10 @@
         });
 
         window.apriMenuInterfaccia = function() {
-            voceInizialeLetta = false; // Permette di ri-leggere il pop-up
+            voceInizialeLetta = false; 
             modeModal.classList.remove('hidden');
         };
 
-        // Lettura Pop-up al PRIMO tocco dello schermo
         document.body.addEventListener('click', () => {
             if (!modeModal.classList.contains('hidden') && !voceInizialeLetta) {
                 parla("Seleziona l'interfaccia. Tocca in alto per l'interfaccia Visiva per ipovedenti. Tocca in basso per l'interfaccia Vocale per non vedenti.");
@@ -344,7 +330,6 @@
             }
         });
 
-        // Inizializzazione Interfaccia
         const savedMode = localStorage.getItem('daisy_ui_mode');
         if (savedMode === 'blind') {
             impostaModalita(true);
@@ -793,7 +778,6 @@
             speedBtn.textContent = newSpeed.toFixed(2).replace('.', ',') + ' x';
         });
 
-        // --- PARSER NUMERI PER SEGNALIBRI ---
         function convertiNumeroTesto(str) {
             const mappa = { 'uno': 1, 'due': 2, 'tre': 3, 'quattro': 4, 'cinque': 5, 'sei': 6, 'sette': 7, 'otto': 8, 'nove': 9, 'dieci': 10 };
             for (let parola in mappa) {
