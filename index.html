@@ -809,7 +809,7 @@
                 comando = comando.replace(/[.,!?]/g, '').trim();
 
                 if (comando.includes('aiuto') || comando.includes('comandi')) {
-                    parla("I comandi sono: Leggi, Stop, Avanti, Indietro, Segnalibro, Elenca segnalibri, Vai al segnalibro seguito dal numero, Veloce, Lento.");
+                    parla("I comandi sono: Leggi, Stop, Avanti un capitolo, Indietro un capitolo, Avanti, Indietro, Segnalibro, Elenca segnalibri, Vai al segnalibro seguito dal numero, Veloce, Lento.");
                 } else if (comando.includes('leggi') || comando.includes('play')) {
                     if (!isPlaying) playBtn.click();
                     if (isBlindMode) parla("In riproduzione");
