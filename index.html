@@ -42,18 +42,25 @@
 
     <audio id="audioPlayer" class="hidden"></audio>
 
-    <!-- INTERRUTTORE MODALITÀ -->
-    <div class="flex justify-between items-center mb-6 pb-4 border-b border-gray-800">
-        <span class="text-sm text-gray-400 font-bold uppercase tracking-wider">Interfaccia:</span>
-        <button id="modeToggleBtn" class="bg-[#233040] text-yellow-brand px-5 py-2 rounded-xl font-bold border border-gray-700 active:scale-95 transition-transform">
-            Ipovedente
-        </button>
+    <!-- POP-UP SCELTA INTERFACCIA (Schermo Intero) -->
+    <div id="modeModal" class="fixed inset-0 bg-[#000000] flex flex-col items-center justify-center z-[100] hidden">
+        <h1 class="text-2xl font-bold text-white mb-8">Seleziona Interfaccia</h1>
+        <div class="flex flex-col gap-4 w-full max-w-xs">
+            <button id="btnModeVisual" class="bg-[#233040] border border-yellow-brand text-yellow-brand py-6 rounded-2xl text-lg font-bold hover:bg-yellow-brand hover:text-black transition-colors flex flex-col items-center gap-2">
+                <span class="text-3xl">👁️</span>
+                <span>Visiva (Ipovedenti)</span>
+            </button>
+            <button id="btnModeBlind" class="bg-yellow-brand border border-yellow-brand text-black py-6 rounded-2xl text-lg font-bold hover:opacity-90 transition-opacity flex flex-col items-center gap-2">
+                <span class="text-3xl">🎤</span>
+                <span>Vocale (Non Vedenti)</span>
+            </button>
+        </div>
     </div>
 
     <!-- ============================================================== -->
     <!-- VISTA IPOVEDENTE (Layout visivo completo)                      -->
     <!-- ============================================================== -->
-    <div id="vistaIpovedente" class="block">
+    <div id="vistaIpovedente" class="hidden">
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
                 <div class="icon-box bg-yellow-brand p-0 overflow-hidden flex items-center justify-center">
@@ -159,9 +166,11 @@
                 <button id="addBookmarkBtn" class="w-full bg-[#233040] hover:bg-yellow-brand hover:text-black text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center border border-gray-700">
                     Aggiungi Segnalibro
                 </button>
-                <div id="bookmarksList" class="mt-4 space-y-2">
+                <div id="bookmarksList" class="mt-4 space-y-2 mb-6">
                 </div>
             </div>
+            
+            <button onclick="window.apriMenuInterfaccia()" class="w-full mt-8 py-3 text-sm text-gray-500 underline text-center">Cambia interfaccia</button>
         </div>
     </div>
 
@@ -171,7 +180,7 @@
     <div id="vistaNonVedente" class="hidden flex-col flex-1 pb-4">
         
         <!-- Header Visivo per Caregiver -->
-        <div class="text-center mb-6">
+        <div class="text-center mb-6 pt-4">
             <p class="text-yellow-brand font-bold uppercase tracking-wider text-xs mb-1">Libro in ascolto:</p>
             <h2 id="blindBookTitle" class="text-2xl font-bold">Nessun libro caricato</h2>
         </div>
@@ -184,8 +193,8 @@
         </label>
 
         <!-- TASTONE VOCALE -->
-        <button id="blindBtnParla" class="bg-yellow-brand text-[#000000] flex-1 min-h-[220px] rounded-3xl font-bold text-2xl shadow-2xl border-4 border-yellow-brand flex flex-col items-center justify-center gap-4 transition-all active:scale-95">
-            <span class="text-6xl">🎤</span>
+        <button id="blindBtnParla" class="bg-yellow-brand text-[#000000] flex-1 min-h-[250px] rounded-3xl font-bold text-3xl shadow-2xl border-4 border-yellow-brand flex flex-col items-center justify-center gap-4 transition-all active:scale-95">
+            <span class="text-7xl">🎤</span>
             <span id="blindBtnTesto">Tocca e Parla</span>
         </button>
 
@@ -196,10 +205,12 @@
                 "Leggi", "Stop", "Avanti un capitolo", "Indietro un capitolo", "Avanti", "Indietro", "Segnalibro", "Veloce", "Lento", <span class="text-yellow-brand font-bold">"Aiuto"</span>
             </p>
         </div>
+        
+        <button onclick="window.apriMenuInterfaccia()" class="w-full mt-6 py-3 text-sm text-gray-600 underline text-center">Cambia interfaccia</button>
     </div>
 
     <!-- MODAL RIPRENDI ASCOLTO -->
-    <div id="resumeModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 hidden">
+    <div id="resumeModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] hidden">
         <div class="bg-[#233040] p-6 rounded-2xl max-w-sm w-full mx-4 border border-gray-700 shadow-2xl">
             <h3 class="text-xl font-bold text-white mb-2">Ascolto precedente</h3>
             <p id="resumeModalText" class="text-gray-300 mb-6 text-sm">Trovato un ascolto precedente per questo libro. Vuoi riprendere?</p>
@@ -214,9 +225,13 @@
     
     <script>
         // DOM Elements principali
-        const modeToggleBtn = document.getElementById('modeToggleBtn');
+        const modeModal = document.getElementById('modeModal');
+        const btnModeVisual = document.getElementById('btnModeVisual');
+        const btnModeBlind = document.getElementById('btnModeBlind');
+        
         const vistaIpovedente = document.getElementById('vistaIpovedente');
         const vistaNonVedente = document.getElementById('vistaNonVedente');
+        
         const blindUploadLabel = document.getElementById('blindUploadLabel');
         const blindBookTitle = document.getElementById('blindBookTitle');
         const blindBtnParla = document.getElementById('blindBtnParla');
@@ -270,28 +285,46 @@
         const svgPathPlay = "M8 5v14l11-7z";
         const svgPathPause = "M6 19h4V5H6v14zm8-14v14h4V5h-4z";
 
-        // --- GESTIONE CAMBIO INTERFACCIA ---
-        modeToggleBtn.addEventListener('click', () => {
-            isBlindMode = !isBlindMode;
+        // --- GESTIONE CAMBIO INTERFACCIA CON POPUP ---
+        function impostaModalita(isBlind) {
+            isBlindMode = isBlind;
+            localStorage.setItem('daisy_ui_mode', isBlind ? 'blind' : 'visual');
+            modeModal.classList.add('hidden');
+            
             if (isBlindMode) {
-                modeToggleBtn.textContent = "Non Vedente";
                 vistaIpovedente.classList.add('hidden');
                 vistaIpovedente.classList.remove('block');
                 vistaNonVedente.classList.remove('hidden');
                 vistaNonVedente.classList.add('flex');
             } else {
-                modeToggleBtn.textContent = "Ipovedente";
                 vistaNonVedente.classList.add('hidden');
                 vistaNonVedente.classList.remove('flex');
                 vistaIpovedente.classList.remove('hidden');
                 vistaIpovedente.classList.add('block');
             }
-        });
+        }
+
+        btnModeVisual.addEventListener('click', () => impostaModalita(false));
+        btnModeBlind.addEventListener('click', () => impostaModalita(true));
+
+        window.apriMenuInterfaccia = function() {
+            modeModal.classList.remove('hidden');
+        };
+
+        // Inizializzazione Interfaccia
+        const savedMode = localStorage.getItem('daisy_ui_mode');
+        if (savedMode === 'blind') {
+            impostaModalita(true);
+        } else if (savedMode === 'visual') {
+            impostaModalita(false);
+        } else {
+            modeModal.classList.remove('hidden'); // Se non c'è scelta salvata, mostra il popup
+        }
 
         // --- SINTESI VOCALE DI SISTEMA ---
         function parla(testoTestuale) {
             if ('speechSynthesis' in window) {
-                speechSynthesis.cancel(); // Ferma l'audio vocale precedente se c'è
+                speechSynthesis.cancel();
                 const msg = new SpeechSynthesisUtterance(testoTestuale);
                 msg.lang = 'it-IT';
                 msg.rate = 1.1; 
@@ -442,7 +475,6 @@
             saveBookmarks();
         }
 
-        // Funzione centralizzata per caricare il file (collegata a entrambi gli input)
         async function gestisciCaricamentoFile(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -506,7 +538,7 @@
 
                         if (chaptersList.length > 0) {
                             uploadLabel.classList.add('hidden');
-                            blindUploadLabel.classList.add('hidden'); // Nasconde il tasto fisico carica libro nella vista non vedente
+                            blindUploadLabel.classList.add('hidden');
 
                             const lastState = getLastPosition();
                             let startChapter = 0;
@@ -758,6 +790,7 @@
                 let comando = e.results[0][0].transcript.toLowerCase();
                 comando = comando.replace(/[.,!?]/g, '').trim();
 
+                // L'ORDINE QUI È FONDAMENTALE (dal più specifico al più generico)
                 if (comando.includes('aiuto') || comando.includes('comandi')) {
                     parla("I comandi disponibili sono: Leggi, Stop, Avanti un capitolo, Indietro un capitolo, Avanti per saltare 30 secondi, Indietro per tornare di 15 secondi, Segnalibro, Veloce, e Lento.");
                 } else if (comando.includes('leggi') || comando.includes('play')) {
@@ -772,12 +805,14 @@
                 } else if (comando.includes('indietro un capitolo') || comando.includes('capitolo precedente')) {
                     prevBtn.click();
                     if (isBlindMode) parla("Capitolo precedente");
-                } else if (comando.includes('avanti') && (comando.includes('30') || comando.includes('trenta'))) {
+                } else if (comando.includes('avanti')) {
+                    // Copre automaticamente "avanti", "avanti 30 secondi", "vai avanti", ecc.
                     skipForwardBtn.click();
-                    if (isBlindMode) parla("Avanti di 30 secondi");
-                } else if (comando.includes('indietro') && (comando.includes('15') || comando.includes('quindici'))) {
+                    if (isBlindMode) parla("Avanti");
+                } else if (comando.includes('indietro')) {
+                    // Copre automaticamente "indietro", "indietro 15 secondi", "torna indietro", ecc.
                     skipBackBtn.click();
-                    if (isBlindMode) parla("Indietro di 15 secondi");
+                    if (isBlindMode) parla("Indietro");
                 } else if (comando.includes('segnalibro')) {
                     addBookmarkBtn.click();
                     if (isBlindMode) parla("Segnalibro aggiunto");
@@ -808,7 +843,7 @@
                 blindBtnParla.classList.replace("border-salmon-brand", "border-yellow-brand");
             }
         } else {
-            blindBtnParla.style.display = 'none'; // Nasconde se browser non compatibile
+            blindBtnParla.style.display = 'none';
         }
 
     </script>
