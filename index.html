@@ -93,7 +93,7 @@
             <div class="flex items-center gap-4 mb-3">
                 <div>
                     <p class="text-xs text-yellow-brand font-bold uppercase tracking-wider">Libro in ascolto</p>
-                    <h2 id="bookTitle" class="text-xl font-bold">In attesa del libro...</h2>
+                    <h2 id="bookTitle" class="text-xl font-bold">Nessun libro caricato</h2>
                 </div>
             </div>
             <div class="w-full bg-gray-700 h-1.5 rounded-full mt-2">
@@ -120,7 +120,7 @@
                 <div class="flex justify-between items-end mb-2">
                     <div>
                         <p class="text-xs text-yellow-brand font-bold uppercase tracking-wider">Capitolo <span id="currentChapter">1</span> di <span id="totalChapters">?</span></p>
-                        <h2 id="chapterTitle" class="text-xl font-bold">Seleziona un libro</h2>
+                        <h2 id="chapterTitle" class="text-xl font-bold">Nessun libro caricato</h2>
                     </div>
                     <button id="speedBtn" class="text-yellow-brand font-bold whitespace-nowrap hover:opacity-80 transition-opacity">1,00 x</button>
                 </div>
@@ -318,13 +318,15 @@
         } else if (savedMode === 'visual') {
             impostaModalita(false);
         } else {
-            modeModal.classList.remove('hidden'); // Se non c'è scelta salvata, mostra il popup
+            modeModal.classList.remove('hidden'); 
         }
 
         // --- SINTESI VOCALE DI SISTEMA ---
-        function parla(testoTestuale) {
+        function parla(testoTestuale, accoda = false) {
             if ('speechSynthesis' in window) {
-                speechSynthesis.cancel();
+                if (!accoda) {
+                    speechSynthesis.cancel(); // Ferma la voce precedente solo se non è un messaggio di caricamento
+                }
                 const msg = new SpeechSynthesisUtterance(testoTestuale);
                 msg.lang = 'it-IT';
                 msg.rate = 1.1; 
@@ -420,7 +422,8 @@
                 modalText.textContent = `Trovato un ascolto precedente per questo libro.\nVuoi riprendere dal Capitolo ${chapterText} (${timeText})?`;
                 modal.classList.remove('hidden');
                 
-                if (isBlindMode) parla(`Vuoi riprendere l'ascolto dal capitolo ${chapterText}? Tocca sì o no sullo schermo.`);
+                // Messo true come secondo parametro per accodare alla voce che dice "Sto caricando il libro" senza interromperla
+                if (isBlindMode) parla(`Vuoi riprendere l'ascolto dal capitolo ${chapterText}? Tocca sì o no sullo schermo.`, true);
 
                 const handleYes = () => {
                     modal.classList.add('hidden');
@@ -510,7 +513,9 @@
                             uiBookTitle.textContent = titoloLetto;
                             blindBookTitle.textContent = titoloLetto;
                             loadBookmarks();
-                            if (isBlindMode) parla("Libro caricato: " + titoloLetto);
+                            
+                            // Messo true come secondo parametro per accodare la frase
+                            if (isBlindMode) parla("Libro caricato: " + titoloLetto, true);
                         }
 
                         const totalTimeMeta = htmlDoc.querySelector("meta[name='ncc:totalTime']");
@@ -790,7 +795,6 @@
                 let comando = e.results[0][0].transcript.toLowerCase();
                 comando = comando.replace(/[.,!?]/g, '').trim();
 
-                // L'ORDINE QUI È FONDAMENTALE (dal più specifico al più generico)
                 if (comando.includes('aiuto') || comando.includes('comandi')) {
                     parla("I comandi disponibili sono: Leggi, Stop, Avanti un capitolo, Indietro un capitolo, Avanti per saltare 30 secondi, Indietro per tornare di 15 secondi, Segnalibro, Veloce, e Lento.");
                 } else if (comando.includes('leggi') || comando.includes('play')) {
@@ -806,11 +810,9 @@
                     prevBtn.click();
                     if (isBlindMode) parla("Capitolo precedente");
                 } else if (comando.includes('avanti')) {
-                    // Copre automaticamente "avanti", "avanti 30 secondi", "vai avanti", ecc.
                     skipForwardBtn.click();
                     if (isBlindMode) parla("Avanti");
                 } else if (comando.includes('indietro')) {
-                    // Copre automaticamente "indietro", "indietro 15 secondi", "torna indietro", ecc.
                     skipBackBtn.click();
                     if (isBlindMode) parla("Indietro");
                 } else if (comando.includes('segnalibro')) {
