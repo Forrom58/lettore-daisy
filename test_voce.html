@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Vocale</title>
+    <style>
+        body { 
+            display: flex; flex-direction: column; align-items: center; 
+            justify-content: center; height: 100vh; font-family: sans-serif; 
+            background-color: #222; color: white; margin: 0; 
+        }
+        button { 
+            width: 200px; height: 200px; font-size: 24px; border-radius: 50%; 
+            background-color: #007bff; color: white; border: none; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+        }
+        button:active { background-color: #0056b3; }
+        #risultato { margin-top: 40px; font-size: 22px; text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+    <button id="btnParla">Parla</button>
+    <div id="risultato">Il testo apparirà qui...</div>
+
+    <script>
+        const btnParla = document.getElementById('btnParla');
+        const divRisultato = document.getElementById('risultato');
+
+        // Inizializza l'API vocale
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            divRisultato.innerText = "Errore: Browser non compatibile.";
+        } else {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'it-IT';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            btnParla.addEventListener('click', () => {
+                divRisultato.innerText = "In ascolto...";
+                recognition.start();
+            });
+
+            recognition.addEventListener('result', (e) => {
+                const testo = e.results[0][0].transcript.toLowerCase();
+                divRisultato.innerText = "Hai detto: " + testo;
+            });
+
+            recognition.addEventListener('error', (e) => {
+                divRisultato.innerText = "Errore: " + e.error;
+            });
+        }
+    </script>
+</body>
+</html>
