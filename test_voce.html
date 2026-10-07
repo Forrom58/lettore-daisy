@@ -49,7 +49,6 @@
                 comando = comando.replace(/[.,!?]/g, '').trim();
                 divRisultato.innerText = "Hai detto: " + comando;
 
-                // Uso di 'includes' per intercettare la parola anche se ci sono spazi o caratteri imprevisti
                 if (comando.includes('leggi')) {
                     alert("Azione: Leggi");
                 } else if (comando.includes('stop')) {
@@ -64,15 +63,15 @@
                     alert("Azione: Indietro 15 secondi");
                 } else if (comando.includes('segnalibro')) {
                     alert("Azione: Aggiungi segnalibro");
-                } else if (comando.includes('velocit')) { 
-                    // 'velocit' intercetta velocità, velocita, velocita'
+                } else if (comando.includes('più veloce') || comando.includes('piu veloce')) { 
                     velocitaAttuale += 0.25;
-                    if (velocitaAttuale > 2.0) {
-                        velocitaAttuale = 0.75;
-                    }
-                    alert("Azione: Velocità impostata a " + velocitaAttuale);
+                    if (velocitaAttuale > 2.0) velocitaAttuale = 2.0;
+                    alert("Azione: Velocità aumentata a " + velocitaAttuale);
+                } else if (comando.includes('più lento') || comando.includes('piu lento')) { 
+                    velocitaAttuale -= 0.25;
+                    if (velocitaAttuale < 0.75) velocitaAttuale = 0.75;
+                    alert("Azione: Velocità diminuita a " + velocitaAttuale);
                 } else {
-                    // Se fallisce, ti stampa ESATTAMENTE cosa ha capito tra parentesi quadre
                     alert("Comando non riconosciuto. Il telefono ha capito: [" + comando + "]");
                 }
             });
