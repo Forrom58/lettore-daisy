@@ -27,7 +27,6 @@
         const btnParla = document.getElementById('btnParla');
         const divRisultato = document.getElementById('risultato');
 
-        // Questa variabile simula la velocità attuale che c'è nella tua app
         let velocitaAttuale = 1.0;
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -50,29 +49,31 @@
                 comando = comando.replace(/[.,!?]/g, '').trim();
                 divRisultato.innerText = "Hai detto: " + comando;
 
-                if (comando === 'leggi') {
+                // Uso di 'includes' per intercettare la parola anche se ci sono spazi o caratteri imprevisti
+                if (comando.includes('leggi')) {
                     alert("Azione: Leggi");
-                } else if (comando === 'stop') {
+                } else if (comando.includes('stop')) {
                     alert("Azione: Stop");
-                } else if (comando === 'avanti un capitolo') {
+                } else if (comando.includes('avanti un capitolo') || comando.includes('capitolo successivo')) {
                     alert("Azione: Avanti un capitolo");
-                } else if (comando === 'indietro un capitolo') {
+                } else if (comando.includes('indietro un capitolo') || comando.includes('capitolo precedente')) {
                     alert("Azione: Indietro un capitolo");
-                } else if (comando === 'avanti 30 secondi' || comando === 'avanti trenta secondi') {
+                } else if (comando.includes('avanti') && (comando.includes('30') || comando.includes('trenta'))) {
                     alert("Azione: Avanti 30 secondi");
-                } else if (comando === 'indietro 15 secondi' || comando === 'indietro quindici secondi') {
+                } else if (comando.includes('indietro') && (comando.includes('15') || comando.includes('quindici'))) {
                     alert("Azione: Indietro 15 secondi");
-                } else if (comando === 'aggiungi segnalibro') {
+                } else if (comando.includes('segnalibro')) {
                     alert("Azione: Aggiungi segnalibro");
-                } else if (comando === 'velocità' || comando === 'velocita') {
-                    // Logica ciclica per la velocità
+                } else if (comando.includes('velocit')) { 
+                    // 'velocit' intercetta velocità, velocita, velocita'
                     velocitaAttuale += 0.25;
                     if (velocitaAttuale > 2.0) {
                         velocitaAttuale = 0.75;
                     }
                     alert("Azione: Velocità impostata a " + velocitaAttuale);
                 } else {
-                    alert("Comando non riconosciuto: " + comando);
+                    // Se fallisce, ti stampa ESATTAMENTE cosa ha capito tra parentesi quadre
+                    alert("Comando non riconosciuto. Il telefono ha capito: [" + comando + "]");
                 }
             });
 
