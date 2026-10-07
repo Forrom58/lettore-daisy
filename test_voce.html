@@ -27,6 +27,9 @@
         const btnParla = document.getElementById('btnParla');
         const divRisultato = document.getElementById('risultato');
 
+        // Questa variabile simula la velocità attuale che c'è nella tua app
+        let velocitaAttuale = 1.0;
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         
         if (!SpeechRecognition) {
@@ -43,21 +46,33 @@
             });
 
             recognition.addEventListener('result', (e) => {
-                // Prende il testo, lo mette in minuscolo e toglie gli spazi vuoti agli estremi
-                const comando = e.results[0][0].transcript.toLowerCase().trim();
+                let comando = e.results[0][0].transcript.toLowerCase();
+                comando = comando.replace(/[.,!?]/g, '').trim();
                 divRisultato.innerText = "Hai detto: " + comando;
 
-                // Intercetta le parole chiave e fa scattare l'azione
-                if (comando.includes('leggi') || comando.includes('play')) {
-                    alert("SIMULAZIONE: Avvio riproduzione audio");
-                } else if (comando.includes('stop') || comando.includes('ferma') || comando.includes('pausa')) {
-                    alert("SIMULAZIONE: Audio messo in pausa");
-                } else if (comando.includes('avanti') || comando.includes('prossimo')) {
-                    alert("SIMULAZIONE: Passaggio al capitolo successivo");
-                } else if (comando.includes('indietro') || comando.includes('precedente')) {
-                    alert("SIMULAZIONE: Ritorno al capitolo precedente");
+                if (comando === 'leggi') {
+                    alert("Azione: Leggi");
+                } else if (comando === 'stop') {
+                    alert("Azione: Stop");
+                } else if (comando === 'avanti un capitolo') {
+                    alert("Azione: Avanti un capitolo");
+                } else if (comando === 'indietro un capitolo') {
+                    alert("Azione: Indietro un capitolo");
+                } else if (comando === 'avanti 30 secondi' || comando === 'avanti trenta secondi') {
+                    alert("Azione: Avanti 30 secondi");
+                } else if (comando === 'indietro 15 secondi' || comando === 'indietro quindici secondi') {
+                    alert("Azione: Indietro 15 secondi");
+                } else if (comando === 'aggiungi segnalibro') {
+                    alert("Azione: Aggiungi segnalibro");
+                } else if (comando === 'velocità' || comando === 'velocita') {
+                    // Logica ciclica per la velocità
+                    velocitaAttuale += 0.25;
+                    if (velocitaAttuale > 2.0) {
+                        velocitaAttuale = 0.75;
+                    }
+                    alert("Azione: Velocità impostata a " + velocitaAttuale);
                 } else {
-                    alert("Comando ignorato: parola chiave non trovata.");
+                    alert("Comando non riconosciuto: " + comando);
                 }
             });
 
