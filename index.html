@@ -46,11 +46,11 @@
     <div id="modeModal" class="fixed inset-0 bg-[#000000] flex flex-col items-center justify-center z-[100] hidden">
         <h1 class="text-2xl font-bold text-white mb-8">Seleziona Interfaccia</h1>
         <div class="flex flex-col gap-4 w-full max-w-xs">
-            <button id="btnModeVisual" class="bg-[#233040] border border-yellow-brand text-yellow-brand py-6 rounded-2xl text-lg font-bold hover:bg-yellow-brand hover:text-black transition-colors flex flex-col items-center gap-2">
+            <button id="btnModeVisual" class="bg-[#233040] border border-yellow-brand text-yellow-brand py-8 rounded-2xl text-lg font-bold hover:bg-yellow-brand hover:text-black transition-colors flex flex-col items-center gap-2">
                 <span class="text-3xl">👁️</span>
                 <span>Visiva (Ipovedenti)</span>
             </button>
-            <button id="btnModeBlind" class="bg-yellow-brand border border-yellow-brand text-black py-6 rounded-2xl text-lg font-bold hover:opacity-90 transition-opacity flex flex-col items-center gap-2">
+            <button id="btnModeBlind" class="bg-yellow-brand border border-yellow-brand text-black py-8 rounded-2xl text-lg font-bold hover:opacity-90 transition-opacity flex flex-col items-center gap-2">
                 <span class="text-3xl">🎤</span>
                 <span>Vocale (Non Vedenti)</span>
             </button>
@@ -202,7 +202,7 @@
         <div class="mt-6 bg-[#131b26] p-4 rounded-xl border border-gray-800">
             <p class="text-xs text-gray-400 font-bold mb-2 uppercase">Comandi Vocali Supportati:</p>
             <p class="text-xs text-gray-300 leading-relaxed">
-                "Leggi", "Stop", "Avanti un capitolo", "Indietro un capitolo", "Avanti", "Indietro", "Segnalibro", "Veloce", "Lento", <span class="text-yellow-brand font-bold">"Aiuto"</span>
+                "Leggi", "Stop", "Avanti / Indietro capitolo", "Avanti / Indietro", "Segnalibro", <span class="text-yellow-brand">"Elenca segnalibri"</span>, <span class="text-yellow-brand">"Vai al segnalibro [numero]"</span>, "Veloce", "Lento", "Aiuto"
             </p>
         </div>
         
@@ -271,6 +271,7 @@
         let isPlaying = false;
         let currentChapterIndex = 0;
         let isBlindMode = false;
+        let voceInizialeLetta = false;
         
         let currentChapterAudioList = []; 
         let currentSnippetIndex = 0;
@@ -285,11 +286,25 @@
         const svgPathPlay = "M8 5v14l11-7z";
         const svgPathPause = "M6 19h4V5H6v14zm8-14v14h4V5h-4z";
 
+        // --- SINTESI VOCALE DI SISTEMA ---
+        function parla(testoTestuale, accoda = false) {
+            if ('speechSynthesis' in window) {
+                if (!accoda) {
+                    speechSynthesis.cancel();
+                }
+                const msg = new SpeechSynthesisUtterance(testoTestuale);
+                msg.lang = 'it-IT';
+                msg.rate = 1.1; 
+                speechSynthesis.speak(msg);
+            }
+        }
+
         // --- GESTIONE CAMBIO INTERFACCIA CON POPUP ---
         function impostaModalita(isBlind) {
             isBlindMode = isBlind;
             localStorage.setItem('daisy_ui_mode', isBlind ? 'blind' : 'visual');
             modeModal.classList.add('hidden');
+            voceInizialeLetta = true; // Spegne il trigger di lettura se l'utente ha già cliccato
             
             if (isBlindMode) {
                 vistaIpovedente.classList.add('hidden');
@@ -304,12 +319,30 @@
             }
         }
 
-        btnModeVisual.addEventListener('click', () => impostaModalita(false));
-        btnModeBlind.addEventListener('click', () => impostaModalita(true));
+        btnModeVisual.addEventListener('click', (e) => {
+            e.stopPropagation(); // Evita che il tocco sul bottone riattivi la voce generale
+            impostaModalita(false);
+            parla("Hai scelto l'interfaccia visiva.");
+        });
+
+        btnModeBlind.addEventListener('click', (e) => {
+            e.stopPropagation();
+            impostaModalita(true);
+            parla("Hai scelto la voce per non vedenti. Carica un libro.");
+        });
 
         window.apriMenuInterfaccia = function() {
+            voceInizialeLetta = false; // Permette di ri-leggere il pop-up
             modeModal.classList.remove('hidden');
         };
+
+        // Lettura Pop-up al PRIMO tocco dello schermo
+        document.body.addEventListener('click', () => {
+            if (!modeModal.classList.contains('hidden') && !voceInizialeLetta) {
+                parla("Seleziona l'interfaccia. Tocca in alto per l'interfaccia Visiva per ipovedenti. Tocca in basso per l'interfaccia Vocale per non vedenti.");
+                voceInizialeLetta = true;
+            }
+        });
 
         // Inizializzazione Interfaccia
         const savedMode = localStorage.getItem('daisy_ui_mode');
@@ -319,19 +352,6 @@
             impostaModalita(false);
         } else {
             modeModal.classList.remove('hidden'); 
-        }
-
-        // --- SINTESI VOCALE DI SISTEMA ---
-        function parla(testoTestuale, accoda = false) {
-            if ('speechSynthesis' in window) {
-                if (!accoda) {
-                    speechSynthesis.cancel(); // Ferma la voce precedente solo se non è un messaggio di caricamento
-                }
-                const msg = new SpeechSynthesisUtterance(testoTestuale);
-                msg.lang = 'it-IT';
-                msg.rate = 1.1; 
-                speechSynthesis.speak(msg);
-            }
         }
 
         function updatePlayIcon() {
@@ -422,7 +442,6 @@
                 modalText.textContent = `Trovato un ascolto precedente per questo libro.\nVuoi riprendere dal Capitolo ${chapterText} (${timeText})?`;
                 modal.classList.remove('hidden');
                 
-                // Messo true come secondo parametro per accodare alla voce che dice "Sto caricando il libro" senza interromperla
                 if (isBlindMode) parla(`Vuoi riprendere l'ascolto dal capitolo ${chapterText}? Tocca sì o no sullo schermo.`, true);
 
                 const handleYes = () => {
@@ -514,7 +533,6 @@
                             blindBookTitle.textContent = titoloLetto;
                             loadBookmarks();
                             
-                            // Messo true come secondo parametro per accodare la frase
                             if (isBlindMode) parla("Libro caricato: " + titoloLetto, true);
                         }
 
@@ -775,6 +793,17 @@
             speedBtn.textContent = newSpeed.toFixed(2).replace('.', ',') + ' x';
         });
 
+        // --- PARSER NUMERI PER SEGNALIBRI ---
+        function convertiNumeroTesto(str) {
+            const mappa = { 'uno': 1, 'due': 2, 'tre': 3, 'quattro': 4, 'cinque': 5, 'sei': 6, 'sette': 7, 'otto': 8, 'nove': 9, 'dieci': 10 };
+            for (let parola in mappa) {
+                if (str.includes(parola)) return mappa[parola];
+            }
+            const match = str.match(/\d+/);
+            if (match) return parseInt(match[0], 10);
+            return null;
+        }
+
         // --- MOTORE VOCALE (SOLO PER VISTA NON VEDENTE) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -796,7 +825,7 @@
                 comando = comando.replace(/[.,!?]/g, '').trim();
 
                 if (comando.includes('aiuto') || comando.includes('comandi')) {
-                    parla("I comandi disponibili sono: Leggi, Stop, Avanti un capitolo, Indietro un capitolo, Avanti per saltare 30 secondi, Indietro per tornare di 15 secondi, Segnalibro, Veloce, e Lento.");
+                    parla("I comandi sono: Leggi, Stop, Avanti, Indietro, Segnalibro, Elenca segnalibri, Vai al segnalibro seguito dal numero, Veloce, Lento.");
                 } else if (comando.includes('leggi') || comando.includes('play')) {
                     if (!isPlaying) playBtn.click();
                     if (isBlindMode) parla("In riproduzione");
@@ -815,6 +844,24 @@
                 } else if (comando.includes('indietro')) {
                     skipBackBtn.click();
                     if (isBlindMode) parla("Indietro");
+                } else if (comando.includes('elenca segnalibri') || comando.includes('leggi segnalibri')) {
+                    if (bookmarks.length === 0) {
+                        if (isBlindMode) parla("Non hai nessun segnalibro salvato.");
+                    } else {
+                        let txt = "Hai " + bookmarks.length + " segnalibri. ";
+                        bookmarks.forEach((bm, i) => {
+                            txt += "Numero " + (i + 1) + ", " + bm.chapterTitle + ". ";
+                        });
+                        if (isBlindMode) parla(txt);
+                    }
+                } else if (comando.includes('vai al segnalibro') || comando.includes('apri segnalibro')) {
+                    let num = convertiNumeroTesto(comando);
+                    if (num !== null && num > 0 && num <= bookmarks.length) {
+                        goToBookmark(num - 1);
+                        if (isBlindMode) parla("Riprendo dal segnalibro " + num);
+                    } else {
+                        if (isBlindMode) parla("Segnalibro non trovato. Di' elenca segnalibri per la lista.");
+                    }
                 } else if (comando.includes('segnalibro')) {
                     addBookmarkBtn.click();
                     if (isBlindMode) parla("Segnalibro aggiunto");
