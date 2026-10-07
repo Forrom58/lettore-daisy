@@ -27,7 +27,6 @@
         const btnParla = document.getElementById('btnParla');
         const divRisultato = document.getElementById('risultato');
 
-        // Inizializza l'API vocale
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         
         if (!SpeechRecognition) {
@@ -44,8 +43,22 @@
             });
 
             recognition.addEventListener('result', (e) => {
-                const testo = e.results[0][0].transcript.toLowerCase();
-                divRisultato.innerText = "Hai detto: " + testo;
+                // Prende il testo, lo mette in minuscolo e toglie gli spazi vuoti agli estremi
+                const comando = e.results[0][0].transcript.toLowerCase().trim();
+                divRisultato.innerText = "Hai detto: " + comando;
+
+                // Intercetta le parole chiave e fa scattare l'azione
+                if (comando.includes('leggi') || comando.includes('play')) {
+                    alert("SIMULAZIONE: Avvio riproduzione audio");
+                } else if (comando.includes('stop') || comando.includes('ferma') || comando.includes('pausa')) {
+                    alert("SIMULAZIONE: Audio messo in pausa");
+                } else if (comando.includes('avanti') || comando.includes('prossimo')) {
+                    alert("SIMULAZIONE: Passaggio al capitolo successivo");
+                } else if (comando.includes('indietro') || comando.includes('precedente')) {
+                    alert("SIMULAZIONE: Ritorno al capitolo precedente");
+                } else {
+                    alert("Comando ignorato: parola chiave non trovata.");
+                }
             });
 
             recognition.addEventListener('error', (e) => {
