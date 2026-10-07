@@ -197,12 +197,15 @@
             </button>
         </div>
 
-        <div class="mt-3">
+       <div class="mt-3 flex flex-col gap-3">
+            <button id="btnParla" class="w-full bg-yellow-brand text-[#000000] hover:opacity-80 font-bold py-4 rounded-xl transition-opacity flex items-center justify-center border-2 border-yellow-brand text-[18px] shadow-lg">
+                🎤 Tocca e Parla
+            </button>
             <button id="addBookmarkBtn" class="w-full bg-[#233040] hover:bg-yellow-brand hover:text-black text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center border border-gray-700">
                 Aggiungi Segnalibro
             </button>
             <div id="bookmarksList" class="mt-4 space-y-2">
-                </div>
+            </div>
         </div>
     </div>
 
@@ -692,6 +695,77 @@
             audioPlayer.playbackRate = newSpeed;
             speedBtn.textContent = newSpeed.toFixed(2).replace('.', ',') + ' x';
         });
+
+        speedBtn.addEventListener('click', () => {
+            currentSpeedIndex = (currentSpeedIndex + 1) % playbackSpeeds.length;
+            const newSpeed = playbackSpeeds[currentSpeedIndex];
+            audioPlayer.playbackRate = newSpeed;
+            speedBtn.textContent = newSpeed.toFixed(2).replace('.', ',') + ' x';
+        });
+
+        // --- INIZIO MOTORE VOCALE ---
+        const btnParla = document.getElementById('btnParla');
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'it-IT';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            btnParla.addEventListener('click', () => {
+                btnParla.textContent = "Ascolto in corso...";
+                btnParla.classList.replace("bg-yellow-brand", "bg-salmon-brand");
+                btnParla.classList.replace("border-yellow-brand", "border-salmon-brand");
+                recognition.start();
+            });
+
+            recognition.addEventListener('result', (e) => {
+                let comando = e.results[0][0].transcript.toLowerCase();
+                comando = comando.replace(/[.,!?]/g, '').trim();
+
+                if (comando.includes('leggi')) {
+                    if (!isPlaying) playBtn.click();
+                } else if (comando.includes('stop')) {
+                    if (isPlaying) playBtn.click();
+                } else if (comando.includes('avanti un capitolo') || comando.includes('capitolo successivo')) {
+                    nextBtn.click();
+                } else if (comando.includes('indietro un capitolo') || comando.includes('capitolo precedente')) {
+                    prevBtn.click();
+                } else if (comando.includes('avanti') && (comando.includes('30') || comando.includes('trenta'))) {
+                    skipForwardBtn.click();
+                } else if (comando.includes('indietro') && (comando.includes('15') || comando.includes('quindici'))) {
+                    skipBackBtn.click();
+                } else if (comando.includes('segnalibro')) {
+                    addBookmarkBtn.click();
+                } else if (comando.includes('veloce')) {
+                    let s = audioPlayer.playbackRate + 0.25;
+                    if (s > 2.0) s = 2.0;
+                    audioPlayer.playbackRate = s;
+                    speedBtn.textContent = s.toFixed(2).replace('.', ',') + ' x';
+                } else if (comando.includes('lento')) {
+                    let s = audioPlayer.playbackRate - 0.25;
+                    if (s < 0.75) s = 0.75;
+                    audioPlayer.playbackRate = s;
+                    speedBtn.textContent = s.toFixed(2).replace('.', ',') + ' x';
+                }
+                resetPulsanteVocale();
+            });
+
+            recognition.addEventListener('error', () => resetPulsanteVocale());
+            recognition.addEventListener('end', () => resetPulsanteVocale());
+
+            function resetPulsanteVocale() {
+                btnParla.innerHTML = "🎤 Tocca e Parla";
+                btnParla.classList.replace("bg-salmon-brand", "bg-yellow-brand");
+                btnParla.classList.replace("border-salmon-brand", "border-yellow-brand");
+            }
+        } else {
+            btnParla.style.display = 'none'; // Nasconde il pulsante se il telefono non lo supporta
+        }
+        // --- FINE MOTORE VOCALE ---
+
+    </script>
 
     </script>
     <script>
