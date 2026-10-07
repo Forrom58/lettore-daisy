@@ -63,11 +63,11 @@
                     alert("Azione: Indietro 15 secondi");
                 } else if (comando.includes('segnalibro')) {
                     alert("Azione: Aggiungi segnalibro");
-                } else if (comando.includes('più veloce') || comando.includes('piu veloce')) { 
+                } else if (comando.includes('veloce')) { 
                     velocitaAttuale += 0.25;
                     if (velocitaAttuale > 2.0) velocitaAttuale = 2.0;
                     alert("Azione: Velocità aumentata a " + velocitaAttuale);
-                } else if (comando.includes('più lento') || comando.includes('piu lento')) { 
+                } else if (comando.includes('lento')) { 
                     velocitaAttuale -= 0.25;
                     if (velocitaAttuale < 0.75) velocitaAttuale = 0.75;
                     alert("Azione: Velocità diminuita a " + velocitaAttuale);
