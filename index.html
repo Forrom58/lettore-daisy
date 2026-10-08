@@ -858,26 +858,28 @@
                 } else if (comando.includes('segnalibro')) {
                     addBookmarkBtn.click();
                     if (isBlindMode) parla("Segnalibro aggiunto");
-                } else if (comando.includes('veloce')) {
-                    let s = audioPlayer.playbackRate + 0.25;
+               } else if (comando.includes('veloce')) {
+                    let current = playbackSpeeds[currentSpeedIndex];
+                    let s = current + 0.25;
                     if (s > 2.0) s = 2.0;
-                    s = Math.round(s * 100) / 100; // Evita errori di calcolo dei decimali
+                    
+                    let newIndex = playbackSpeeds.indexOf(s);
+                    if (newIndex !== -1) currentSpeedIndex = newIndex; // ECCO IL FIX: Aggiorna la memoria globale
                     
                     audioPlayer.playbackRate = s;
-                    currentSpeedIndex = playbackSpeeds.indexOf(s); // Salva in memoria
                     speedBtn.textContent = s.toFixed(2).replace('.', ',') + ' x';
-                    
-                    if (isBlindMode) parla(s === 2.0 ? "Velocità massima raggiunta" : "Velocità aumentata");
+                    if (isBlindMode) parla(s === 2.0 ? "Velocità massima" : "Velocità aumentata");
                 } else if (comando.includes('lento')) {
-                    let s = audioPlayer.playbackRate - 0.25;
+                    let current = playbackSpeeds[currentSpeedIndex];
+                    let s = current - 0.25;
                     if (s < 0.75) s = 0.75;
-                    s = Math.round(s * 100) / 100; // Evita errori di calcolo dei decimali
+                    
+                    let newIndex = playbackSpeeds.indexOf(s);
+                    if (newIndex !== -1) currentSpeedIndex = newIndex; // ECCO IL FIX: Aggiorna la memoria globale
                     
                     audioPlayer.playbackRate = s;
-                    currentSpeedIndex = playbackSpeeds.indexOf(s); // Salva in memoria
                     speedBtn.textContent = s.toFixed(2).replace('.', ',') + ' x';
-                    
-                    if (isBlindMode) parla(s === 0.75 ? "Velocità minima raggiunta" : "Velocità diminuita");
+                    if (isBlindMode) parla(s === 0.75 ? "Velocità minima" : "Velocità diminuita");
                 } else {
                     if (isBlindMode) parla("Comando non riconosciuto");
                 }
