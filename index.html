@@ -825,10 +825,10 @@
                 } else if (comando.includes('stop') || comando.includes('ferma')) {
                     if (isPlaying) playBtn.click();
                     if (isBlindMode) parla("In pausa");
-                } else if (comando.includes('avanti un capitolo') || comando.includes('capitolo successivo')) {
+                } else if ((comando.includes('avanti') && comando.includes('capitolo')) || comando.includes('capitolo successivo')) {
                     nextBtn.click();
                     if (isBlindMode) parla("Capitolo successivo");
-                } else if (comando.includes('indietro un capitolo') || comando.includes('capitolo precedente')) {
+                } else if ((comando.includes('indietro') && comando.includes('capitolo')) || comando.includes('capitolo precedente')) {
                     prevBtn.click();
                     if (isBlindMode) parla("Capitolo precedente");
                 } else if (comando.includes('avanti')) {
