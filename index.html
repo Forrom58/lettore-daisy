@@ -161,7 +161,7 @@
                 </div>
             </div>
             
-            <button onclick="window.apriMenuInterfaccia()" class="w-full mt-8 py-3 text-sm text-white underline text-center">Cambia interfaccia</button>
+            <button onclick="window.apriMenuInterfaccia()" class="w-full mt-8 py-3 text-base text-white underline text-center">Cambia interfaccia</button>
         </div>
     </div>
 
@@ -195,11 +195,11 @@
         <div class="mt-6 bg-[#131b26] p-4 rounded-xl border border-gray-800">
             <p class="text-xs text-gray-400 font-bold mb-2 uppercase">Comandi Vocali Supportati:</p>
             <p class="text-xs text-gray-300 leading-relaxed">
-                "Leggi", "Stop", "Avanti / Indietro capitolo", "Avanti / Indietro", "Segnalibro", <span class="text-yellow-brand">"Elenca segnalibri"</span>, <span class="text-yellow-brand">"Vai al segnalibro [numero]"</span>, "Veloce", "Lento", "Aiuto"
+                "Leggi", "Stop", "Avanti / Indietro capitolo", "Avanti / Indietro", "Segnalibro", <span class="text-yellow-brand">"Elenca segnalibri"</span>, <span class="text-yellow-brand">"Vai al segnalibro [numero]"</span>, "Veloce", "Lento", "Guida", "Aiuto"
             </p>
         </div>
         
-        <button onclick="window.apriMenuInterfaccia()" class="w-full mt-6 py-3 text-sm text-white underline text-center">Cambia interfaccia</button>
+        <button onclick="window.apriMenuInterfaccia()" class="w-full mt-6 py-3 text-base text-white underline text-center">Cambia interfaccia</button>
     </div>
 
     <!-- MODAL RIPRENDI ASCOLTO -->
@@ -276,7 +276,8 @@
         const playbackSpeeds = [1.0, 1.25, 1.5, 1.75, 2.0, 0.75];
         let currentSpeedIndex = 0;
         let bookmarks = [];
-        const testoGuida = "Benvenuto nel lettore DAISY. Ti trovi nell'interfaccia vocale per non vedenti. Ecco come funziona l'applicazione. Lo schermo del tuo telefono è diviso in due parti. Nella metà superiore, trovi il pulsante per caricare un libro. Ricorda: il libro deve essere un pacchetto DAISY in formato punto zip, che hai già salvato sul tuo dispositivo. Una volta caricato il libro, userai principalmente la metà inferiore dello schermo. Qui si trova un unico grande pulsante che occupa tutto lo spazio: è il tuo microfono. Toccalo in qualsiasi momento, attendi il suono, e pronuncia un comando. Puoi dire Leggi per iniziare l'ascolto, e Stop per metterlo in pausa. Puoi dire Avanti capitolo o Indietro capitolo per muoverti tra le sezioni del libro. Per fare piccoli salti nel tempo, dì semplicemente Avanti o Indietro. Se vuoi riascoltare tutti i comandi disponibili in qualsiasi momento, tocca il grande pulsante e pronuncia la parola: Aiuto. Tocca la parte alta dello schermo per cercare e caricare il tuo primo libro.";
+
+        const testoGuida = "Benvenuto nel lettore DAISY. Ti trovi nell'interfaccia vocale per non vedenti. Ecco come funziona l'applicazione. Lo schermo del tuo telefono è diviso in due parti. Nella metà superiore, trovi il pulsante per caricare un libro. Ricorda: il libro deve essere un pacchetto DAISY in formato punto zip, che hai già salvato sul tuo dispositivo. Una volta caricato il libro, userai principalmente la metà inferiore dello schermo. Qui si trova un unico grande pulsante che occupa tutto lo spazio: è il tuo microfono. Toccalo in qualsiasi momento, attendi il suono, e pronuncia un comando. Puoi dire Leggi per iniziare l'ascolto, e Stop per metterlo in pausa. Puoi dire Avanti capitolo o Indietro capitolo per muoverti tra le sezioni del libro. Per fare piccoli salti nel tempo, dì semplicemente Avanti o Indietro. Se vuoi riascoltare tutti i comandi disponibili in qualsiasi momento, tocca il grande pulsante e pronuncia la parola: Aiuto. Oppure dì Guida per risentire queste istruzioni. Tocca la parte alta dello schermo per cercare e caricare il tuo primo libro.";
 
         const svgPathPlay = "M8 5v14l11-7z";
         const svgPathPause = "M6 19h4V5H6v14zm8-14v14h4V5h-4z";
@@ -823,16 +824,11 @@
                 let comando = e.results[0][0].transcript.toLowerCase();
                 comando = comando.replace(/[.,!?]/g, '').trim();
 
-               btnModeBlind.addEventListener('click', (e) => {
-            e.stopPropagation();
-            impostaModalita(true);
-            if (!localStorage.getItem('daisy_guida_letta')) {
-                parla(testoGuida);
-                localStorage.setItem('daisy_guida_letta', 'true');
-            } else {
-                parla("Hai scelto la voce per non vedenti. Carica un libro.");
-            }
-        });
+                if (comando.includes('aiuto') || comando.includes('comandi')) {
+                    parla("I comandi sono: Leggi, Stop, Avanti un capitolo, Indietro un capitolo, Avanti, Indietro, Segnalibro, Elenca segnalibri, Vai al segnalibro seguito dal numero, Veloce, Lento, Guida.");
+                } else if (comando.includes('guida') || comando.includes('istruzioni') || comando.includes('tutorial')) {
+                    parla(testoGuida);
+                } else if (comando.includes('leggi') || comando.includes('play')) {
                     if (!isPlaying) playBtn.click();
                     if (isBlindMode) parla("In riproduzione");
                 } else if (comando.includes('stop') || comando.includes('ferma')) {
@@ -871,13 +867,13 @@
                 } else if (comando.includes('segnalibro')) {
                     addBookmarkBtn.click();
                     if (isBlindMode) parla("Segnalibro aggiunto");
-               } else if (comando.includes('veloce')) {
+                } else if (comando.includes('veloce')) {
                     let current = playbackSpeeds[currentSpeedIndex];
                     let s = current + 0.25;
                     if (s > 2.0) s = 2.0;
                     
                     let newIndex = playbackSpeeds.indexOf(s);
-                    if (newIndex !== -1) currentSpeedIndex = newIndex; // ECCO IL FIX: Aggiorna la memoria globale
+                    if (newIndex !== -1) currentSpeedIndex = newIndex;
                     
                     audioPlayer.playbackRate = s;
                     speedBtn.textContent = s.toFixed(2).replace('.', ',') + ' x';
@@ -888,7 +884,7 @@
                     if (s < 0.75) s = 0.75;
                     
                     let newIndex = playbackSpeeds.indexOf(s);
-                    if (newIndex !== -1) currentSpeedIndex = newIndex; // ECCO IL FIX: Aggiorna la memoria globale
+                    if (newIndex !== -1) currentSpeedIndex = newIndex;
                     
                     audioPlayer.playbackRate = s;
                     speedBtn.textContent = s.toFixed(2).replace('.', ',') + ' x';
