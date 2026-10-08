@@ -861,15 +861,23 @@
                 } else if (comando.includes('veloce')) {
                     let s = audioPlayer.playbackRate + 0.25;
                     if (s > 2.0) s = 2.0;
+                    s = Math.round(s * 100) / 100; // Evita errori di calcolo dei decimali
+                    
                     audioPlayer.playbackRate = s;
+                    currentSpeedIndex = playbackSpeeds.indexOf(s); // Salva in memoria
                     speedBtn.textContent = s.toFixed(2).replace('.', ',') + ' x';
-                    if (isBlindMode) parla("Velocità aumentata");
+                    
+                    if (isBlindMode) parla(s === 2.0 ? "Velocità massima raggiunta" : "Velocità aumentata");
                 } else if (comando.includes('lento')) {
                     let s = audioPlayer.playbackRate - 0.25;
                     if (s < 0.75) s = 0.75;
+                    s = Math.round(s * 100) / 100; // Evita errori di calcolo dei decimali
+                    
                     audioPlayer.playbackRate = s;
+                    currentSpeedIndex = playbackSpeeds.indexOf(s); // Salva in memoria
                     speedBtn.textContent = s.toFixed(2).replace('.', ',') + ' x';
-                    if (isBlindMode) parla("Velocità diminuita");
+                    
+                    if (isBlindMode) parla(s === 0.75 ? "Velocità minima raggiunta" : "Velocità diminuita");
                 } else {
                     if (isBlindMode) parla("Comando non riconosciuto");
                 }
