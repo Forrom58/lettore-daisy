@@ -206,7 +206,7 @@
     <div id="resumeModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] hidden">
         <div class="bg-[#233040] p-6 rounded-2xl max-w-sm w-full mx-4 border border-gray-700 shadow-2xl">
             <h3 class="text-xl font-bold text-white mb-2">Ascolto precedente</h3>
-            <p id="resumeModalText" class="text-gray-300 mb-6 text-sm">Trovato un ascolto precedente per questo libro. Vuoi riprendere?</p>
+            <p id="resumeModalText" class="text-gray-300 mb-6 text-sm">Trovato un ascolto precedente per这个 libro. Vuoi riprendere?</p>
             <div class="flex gap-4">
                 <button id="resumeModalNo" class="flex-1 py-3 rounded-xl bg-[#131b26] text-white font-bold hover:bg-gray-800 transition-colors">No</button>
                 <button id="resumeModalYes" class="flex-1 py-3 rounded-xl bg-yellow-brand text-[#131b26] font-bold hover:opacity-90 transition-opacity">Sì</button>
@@ -282,8 +282,8 @@
         const svgPathPlay = "M8 5v14l11-7z";
         const svgPathPause = "M6 19h4V5H6v14zm8-14v14h4V5h-4z";
 
-        // --- SINTESI VOCALE DI SISTEMA ---
-        function parla(testoTestuale, accoda = false) {
+        // --- SINTESI VOCALE DI SISTEMA CON CALLBACK DI CHIUSURA ---
+        function parla(testoTestuale, accoda = false, onEndCallback = null) {
             if ('speechSynthesis' in window) {
                 if (!accoda) {
                     speechSynthesis.cancel();
@@ -291,7 +291,13 @@
                 const msg = new SpeechSynthesisUtterance(testoTestuale);
                 msg.lang = 'it-IT';
                 msg.rate = 1.1; 
+                if (onEndCallback) {
+                    msg.onend = onEndCallback;
+                    msg.onerror = onEndCallback;
+                }
                 speechSynthesis.speak(msg);
+            } else {
+                if (onEndCallback) onEndCallback();
             }
         }
 
@@ -824,49 +830,71 @@
                 let comando = e.results[0][0].transcript.toLowerCase();
                 comando = comando.replace(/[.,!?]/g, '').trim();
 
+                // 1. Interrompi subito l'audio del libro per evitare sovrapposizioni con la voce di feedback
+                audioPlayer.pause();
+                isPlaying = false;
+                updatePlayIcon();
+
+                // Funzione di utilità per far ripartire l'ascolto DOPO che la voce ha finito di parlare
+                const riprendiAscolto = () => {
+                    if (currentChapterAudioList.length > 0) {
+                        audioPlayer.play();
+                        isPlaying = true;
+                        updatePlayIcon();
+                    }
+                };
+
                 if (comando.includes('aiuto') || comando.includes('comandi')) {
                     parla("I comandi sono: Leggi, Stop, Avanti un capitolo, Indietro un capitolo, Avanti, Indietro, Segnalibro, Elenca segnalibri, Vai al segnalibro seguito dal numero, Veloce, Lento, Guida.");
                 } else if (comando.includes('guida') || comando.includes('istruzioni') || comando.includes('tutorial')) {
                     parla(testoGuida);
                 } else if (comando.includes('leggi') || comando.includes('play')) {
-                    if (!isPlaying) playBtn.click();
-                    if (isBlindMode) parla("In riproduzione");
+                    parla("In riproduzione", false, riprendiAscolto);
                 } else if (comando.includes('stop') || comando.includes('ferma')) {
-                    if (isPlaying) playBtn.click();
-                    if (isBlindMode) parla("In pausa");
+                    parla("In pausa"); // Rimane in pausa
                 } else if ((comando.includes('avanti') && comando.includes('capitolo')) || comando.includes('capitolo successivo')) {
-                    nextBtn.click();
-                    if (isBlindMode) parla("Capitolo successivo");
+                    parla("Capitolo successivo", false, () => {
+                        playChapter(currentChapterIndex + 1, false).then(() => riprendiAscolto());
+                        // Fallback nel caso playChapter non restituisca una Promise
+                        setTimeout(riprendiAscolto, 500); 
+                    });
                 } else if ((comando.includes('indietro') && comando.includes('capitolo')) || comando.includes('capitolo precedente')) {
-                    prevBtn.click();
-                    if (isBlindMode) parla("Capitolo precedente");
+                    parla("Capitolo precedente", false, () => {
+                        playChapter(currentChapterIndex - 1, false);
+                        setTimeout(riprendiAscolto, 500);
+                    });
                 } else if (comando.includes('avanti')) {
-                    skipForwardBtn.click();
-                    if (isBlindMode) parla("Avanti");
+                    parla("Avanti", false, () => {
+                        jumpTime(30);
+                        riprendiAscolto();
+                    });
                 } else if (comando.includes('indietro')) {
-                    skipBackBtn.click();
-                    if (isBlindMode) parla("Indietro");
+                    parla("Indietro", false, () => {
+                        jumpTime(-15);
+                        riprendiAscolto();
+                    });
                 } else if (comando.includes('elenca segnalibri') || comando.includes('leggi segnalibri')) {
                     if (bookmarks.length === 0) {
-                        if (isBlindMode) parla("Non hai nessun segnalibro salvato.");
+                        parla("Non hai nessun segnalibro salvato.");
                     } else {
                         let txt = "Hai " + bookmarks.length + " segnalibri. ";
                         bookmarks.forEach((bm, i) => {
                             txt += "Numero " + (i + 1) + ", " + bm.chapterTitle + ". ";
                         });
-                        if (isBlindMode) parla(txt);
+                        parla(txt);
                     }
                 } else if (comando.includes('vai al segnalibro') || comando.includes('apri segnalibro')) {
                     let num = convertiNumeroTesto(comando);
                     if (num !== null && num > 0 && num <= bookmarks.length) {
-                        goToBookmark(num - 1);
-                        if (isBlindMode) parla("Riprendo dal segnalibro " + num);
+                        parla("Riprendo dal segnalibro " + num, false, () => {
+                            goToBookmark(num - 1);
+                        });
                     } else {
-                        if (isBlindMode) parla("Segnalibro non trovato. Di' elenca segnalibri per la lista.");
+                        parla("Segnalibro non trovato. Di' elenca segnalibri per la lista.");
                     }
                 } else if (comando.includes('segnalibro')) {
                     addBookmarkBtn.click();
-                    if (isBlindMode) parla("Segnalibro aggiunto");
+                    parla("Segnalibro aggiunto", false, riprendiAscolto);
                 } else if (comando.includes('veloce')) {
                     let current = playbackSpeeds[currentSpeedIndex];
                     let s = current + 0.25;
@@ -877,7 +905,9 @@
                     
                     audioPlayer.playbackRate = s;
                     speedBtn.textContent = s.toFixed(2).replace('.', ',') + ' x';
-                    if (isBlindMode) parla(s === 2.0 ? "Velocità massima" : "Velocità aumentata");
+                    
+                    let feedback = s === 2.0 ? "Velocità massima" : "Velocità aumentata";
+                    parla(feedback, false, riprendiAscolto);
                 } else if (comando.includes('lento')) {
                     let current = playbackSpeeds[currentSpeedIndex];
                     let s = current - 0.25;
@@ -888,9 +918,11 @@
                     
                     audioPlayer.playbackRate = s;
                     speedBtn.textContent = s.toFixed(2).replace('.', ',') + ' x';
-                    if (isBlindMode) parla(s === 0.75 ? "Velocità minima" : "Velocità diminuita");
+                    
+                    let feedback = s === 0.75 ? "Velocità minima" : "Velocità diminuita";
+                    parla(feedback, false, riprendiAscolto);
                 } else {
-                    if (isBlindMode) parla("Comando non riconosciuto");
+                    parla("Comando non riconosciuto");
                 }
                 resetPulsanteVocale();
             });
