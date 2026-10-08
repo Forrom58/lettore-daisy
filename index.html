@@ -18,7 +18,7 @@
         <style>
             body { background-color: #000000; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; }
             .card { background-color: #233040; border-radius: 1.25rem; padding: 1.25rem; margin-bottom: 1.5rem; }
-            .icon-box { border-radius: 0.75rem; width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.25rem; overflow: hidden;}
+            .icon-box { border-radius: 0.75rem; width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; overflow: hidden;}
             .bg-yellow-brand { background-color: #fbbf24; color: #000000; }
             .bg-salmon-brand { background-color: #f87171; color: #000000; }
             .text-yellow-brand { color: #fbbf24; }
@@ -49,7 +49,7 @@
     <div id="vistaIpovedente" class="hidden">
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <div class="icon-box bg-yellow-brand p-0 overflow-hidden flex items-center justify-center">
+                <div class="icon-box bg-yellow-brand p-0 flex items-center justify-center">
                  <svg version="1.1" width="532" height="532" viewBox="0 0 532 532" xmlns="http://www.w3.org/2000/svg">
                   <rect style="fill:#f8ae07;fill-opacity:1" width="553.67" height="553.67" x="-10.83" y="-10.83" />
                   <g transform="matrix(1.445,0,0,1.445,-371.84,-228.95)">
@@ -68,18 +68,21 @@
                   </g>
                 </svg>
                 </div>
-                <div class="flex flex-col justify-center">
+                <div class="flex flex-col justify-center overflow-hidden">
                     <p class="text-xs text-yellow-brand font-bold uppercase tracking-wider whitespace-nowrap">Lettore di libri DAISY</p>
-                    <h1 class="text-xl font-bold leading-tight whitespace-nowrap">Ascolta senza barriere</h1>
+                    <h1 class="text-lg font-bold leading-tight whitespace-nowrap truncate">Ascolta senza barriere</h1>
                 </div>
             </div>
         </div>
 
+        <!-- Pulsante Carica Libro -->
         <label id="uploadLabel" class="card flex items-center gap-4 cursor-pointer hover:bg-[#2c3d52] transition-colors mb-4">
-            <div class="icon-box bg-yellow-brand text-black">📁</div>
-            <div class="flex-1">
-                <h3 class="font-bold">Carica un libro</h3>
-                <p class="text-xs text-gray-400">Pacchetto DAISY .zip</p>
+            <div class="icon-box bg-yellow-brand">
+                <svg class="w-7 h-7" fill="#233040" viewBox="0 0 24 24"><path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/></svg>
+            </div>
+            <div class="flex-1 overflow-hidden">
+                <h3 class="font-bold text-base truncate">Carica un libro</h3>
+                <p class="text-xs text-gray-400 truncate">Pacchetto DAISY .zip</p>
             </div>
             <div class="text-yellow-brand text-xl">›</div>
             <input type="file" id="daisyFileInput" accept=".zip" class="hidden">
@@ -91,11 +94,11 @@
             <div class="card mb-4" id="playerInfoCard">
                 <!-- Sezione Libro -->
                 <div class="flex justify-between items-start mb-2">
-                    <div class="pr-2">
-                        <p class="text-xs text-yellow-brand font-bold uppercase tracking-wider">Libro in ascolto</p>
-                        <h2 id="bookTitle" class="text-xl font-bold leading-tight">Nessun libro caricato</h2>
+                    <div class="pr-2 w-full overflow-hidden">
+                        <p class="text-[10px] text-yellow-brand font-bold uppercase tracking-wider">Libro in ascolto</p>
+                        <h2 id="bookTitle" class="text-lg font-bold leading-tight truncate w-full">Nessun libro caricato</h2>
                     </div>
-                    <button id="speedBtn" class="text-yellow-brand font-bold whitespace-nowrap hover:opacity-80 transition-opacity mt-1">1,00 x</button>
+                    <button id="speedBtn" class="text-yellow-brand font-bold whitespace-nowrap hover:opacity-80 transition-opacity mt-1 ml-2">1,00 x</button>
                 </div>
                 <div class="w-full bg-gray-700 h-1.5 rounded-full mt-2">
                     <div id="bookProgressBar" class="bg-salmon-brand h-1.5 rounded-full" style="width: 0%;"></div>
@@ -107,8 +110,8 @@
 
                 <!-- Sezione Capitolo (Nascosta finché non c'è il libro) -->
                 <div id="chapterInfoSection" class="hidden border-t border-gray-700 pt-3 mt-3">
-                    <p class="text-xs text-yellow-brand font-bold uppercase tracking-wider">Capitolo <span id="currentChapter">1</span> di <span id="totalChapters">?</span></p>
-                    <h2 id="chapterTitle" class="text-lg font-bold truncate mb-3">...</h2>
+                    <p class="text-[10px] text-yellow-brand font-bold uppercase tracking-wider">Capitolo <span id="currentChapter">1</span> di <span id="totalChapters">?</span></p>
+                    <h2 id="chapterTitle" class="text-base font-bold truncate mb-3">...</h2>
                     
                     <div class="w-full h-4 cursor-pointer relative" id="chapterProgressContainer">
                         <div class="absolute inset-0 flex items-center">
@@ -166,14 +169,14 @@
     <div id="vistaNonVedente" class="hidden flex-col flex-1 pb-4">
         
         <!-- Header Visivo per Caregiver -->
-        <div class="text-center mb-6 pt-4">
+        <div class="text-center mb-6 pt-4 px-2">
             <p class="text-yellow-brand font-bold uppercase tracking-wider text-xs mb-1">Libro in ascolto:</p>
-            <h2 id="blindBookTitle" class="text-2xl font-bold">Nessun libro caricato</h2>
+            <h2 id="blindBookTitle" class="text-xl font-bold truncate">Nessun libro caricato</h2>
         </div>
 
         <!-- Pulsante Carica Libro Dedicato -->
         <label id="blindUploadLabel" class="bg-[#233040] text-white p-6 rounded-2xl flex flex-col items-center justify-center mb-6 cursor-pointer border border-gray-700 active:bg-gray-700 transition-colors">
-            <span class="text-5xl mb-3">📁</span>
+            <svg class="w-16 h-16 mb-3" fill="#fbbf24" viewBox="0 0 24 24"><path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/></svg>
             <span class="font-bold text-xl">Carica un libro</span>
             <input type="file" id="blindFileInput" accept=".zip" class="hidden">
         </label>
