@@ -12,7 +12,6 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="black">
         <meta name="apple-mobile-web-app-title" content="Lettore DAISY">
         
-        <!-- MANIFEST COMPATTATO SU UNA RIGA PER EVITARE ERRORI SU GITHUB -->
         <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Lettore DAISY","short_name":"DAISY","start_url":"index.html","display":"standalone","background_color":"#000000","theme_color":"#fbbf24","icons":[{"src":"icona_app_daisy.svg","sizes":"any","type":"image/svg+xml"}]}'>
     
         <script src="https://cdn.tailwindcss.com"></script>
@@ -76,23 +75,7 @@
             </div>
         </div>
 
-        <div class="card">
-            <div class="flex items-center gap-4 mb-3">
-                <div>
-                    <p class="text-xs text-yellow-brand font-bold uppercase tracking-wider">Libro in ascolto</p>
-                    <h2 id="bookTitle" class="text-xl font-bold">Nessun libro caricato</h2>
-                </div>
-            </div>
-            <div class="w-full bg-gray-700 h-1.5 rounded-full mt-2">
-                <div id="bookProgressBar" class="bg-salmon-brand h-1.5 rounded-full" style="width: 0%;"></div>
-            </div>
-            <div class="flex justify-between text-xs text-gray-400 mt-1">
-                <span id="bookTimeCurrent">0:00:00</span>
-                <span id="bookTimeTotal">0:00:00</span>
-            </div>
-        </div>
-
-        <label id="uploadLabel" class="card flex items-center gap-4 cursor-pointer hover:bg-[#2c3d52] transition-colors">
+        <label id="uploadLabel" class="card flex items-center gap-4 cursor-pointer hover:bg-[#2c3d52] transition-colors mb-4">
             <div class="icon-box bg-yellow-brand text-black">📁</div>
             <div class="flex-1">
                 <h3 class="font-bold">Carica un libro</h3>
@@ -103,24 +86,40 @@
         </label>
 
         <div class="w-full">
-            <div class="card">
-                <div class="flex justify-between items-end mb-2">
-                    <div>
-                        <p class="text-xs text-yellow-brand font-bold uppercase tracking-wider">Capitolo <span id="currentChapter">1</span> di <span id="totalChapters">?</span></p>
-                        <h2 id="chapterTitle" class="text-xl font-bold">Nessun libro caricato</h2>
+            
+            <!-- BLOCCO UNICO: LIBRO + CAPITOLO -->
+            <div class="card mb-4" id="playerInfoCard">
+                <!-- Sezione Libro -->
+                <div class="flex justify-between items-start mb-2">
+                    <div class="pr-2">
+                        <p class="text-xs text-yellow-brand font-bold uppercase tracking-wider">Libro in ascolto</p>
+                        <h2 id="bookTitle" class="text-xl font-bold leading-tight">Nessun libro caricato</h2>
                     </div>
-                    <button id="speedBtn" class="text-yellow-brand font-bold whitespace-nowrap hover:opacity-80 transition-opacity">1,00 x</button>
+                    <button id="speedBtn" class="text-yellow-brand font-bold whitespace-nowrap hover:opacity-80 transition-opacity mt-1">1,00 x</button>
                 </div>
-                
-                <div class="w-full h-4 mt-4 mb-2 cursor-pointer relative" id="chapterProgressContainer">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full bg-gray-700 h-1.5 rounded-full pointer-events-none"></div>
+                <div class="w-full bg-gray-700 h-1.5 rounded-full mt-2">
+                    <div id="bookProgressBar" class="bg-salmon-brand h-1.5 rounded-full" style="width: 0%;"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400 mt-1 mb-2">
+                    <span id="bookTimeCurrent">0:00:00</span>
+                    <span id="bookTimeTotal">0:00:00</span>
+                </div>
+
+                <!-- Sezione Capitolo (Nascosta finché non c'è il libro) -->
+                <div id="chapterInfoSection" class="hidden border-t border-gray-700 pt-3 mt-3">
+                    <p class="text-xs text-yellow-brand font-bold uppercase tracking-wider">Capitolo <span id="currentChapter">1</span> di <span id="totalChapters">?</span></p>
+                    <h2 id="chapterTitle" class="text-lg font-bold truncate mb-3">...</h2>
+                    
+                    <div class="w-full h-4 cursor-pointer relative" id="chapterProgressContainer">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full bg-gray-700 h-1.5 rounded-full pointer-events-none"></div>
+                        </div>
+                        <div id="chapterProgressBar" class="absolute top-1/2 left-0 transform -translate-y-1/2 bg-yellow-brand h-1.5 rounded-full pointer-events-none" style="width: 0%;"></div>
                     </div>
-                    <div id="chapterProgressBar" class="absolute top-1/2 left-0 transform -translate-y-1/2 bg-yellow-brand h-1.5 rounded-full pointer-events-none" style="width: 0%;"></div>
-                </div>
-                <div class="flex justify-between text-xs text-gray-400">
-                    <span id="chapterTimeCurrent">0:00</span>
-                    <span id="chapterTimeTotal">0:00</span>
+                    <div class="flex justify-between text-xs text-gray-400 mt-1">
+                        <span id="chapterTimeCurrent">0:00</span>
+                        <span id="chapterTimeTotal">0:00</span>
+                    </div>
                 </div>
             </div>
 
@@ -249,6 +248,7 @@
         const bookTimeCurrent = document.getElementById('bookTimeCurrent');
         const bookTimeTotal = document.getElementById('bookTimeTotal');
         const bookProgressBar = document.getElementById('bookProgressBar');
+        const chapterInfoSection = document.getElementById('chapterInfoSection');
         
         const addBookmarkBtn = document.getElementById('addBookmarkBtn');
         const bookmarksList = document.getElementById('bookmarksList');
@@ -547,6 +547,7 @@
                         if (chaptersList.length > 0) {
                             uploadLabel.classList.add('hidden');
                             blindUploadLabel.classList.add('hidden');
+                            chapterInfoSection.classList.remove('hidden');
 
                             const lastState = getLastPosition();
                             let startChapter = 0;
@@ -564,6 +565,7 @@
                             await playChapter(startChapter, false, startTime);
                         } else {
                             uiChapterTitle.textContent = "Nessun capitolo trovato";
+                            chapterInfoSection.classList.remove('hidden');
                         }
                     } else {
                         uiBookTitle.textContent = "Formato non supportato";
