@@ -41,7 +41,7 @@
             </button>
             <button id="btnModeBlind" class="bg-yellow-brand border border-yellow-brand text-black py-8 rounded-2xl text-lg font-bold hover:opacity-90 transition-opacity flex flex-col items-center gap-2">
                 <span class="text-3xl" aria-hidden="true">🎤</span>
-                <span>Vocale (Non Vedenti)</span>
+                <span id="btnModeBlindTesto">Vocale (Non Vedenti)</span>
             </button>
         </div>
     </div>
@@ -180,13 +180,50 @@
         </div>
 
         <!-- Pulsante Carica Libro Dedicato -->
-        <label id="blindUploadLabel" class="bg-[#233040] text-white p-6 rounded-2xl flex flex-col items-center justify-center mb-6 cursor-pointer border border-gray-700 active:bg-gray-700 transition-colors">
+        <label id="blindUploadLabel" role="button" tabindex="0" class="bg-[#233040] text-white p-6 rounded-2xl flex flex-col items-center justify-center mb-6 cursor-pointer border border-gray-700 active:bg-gray-700 transition-colors">
             <svg class="w-16 h-16 mb-3" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 4h6l2 3h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
             </svg>
             <span class="font-bold text-xl">Carica un libro</span>
             <input type="file" id="blindFileInput" accept=".zip,application/zip" class="hidden">
         </label>
+
+        <!-- CONTROLLI A TASTI PER VOICEOVER (iPhone / browser senza riconoscimento vocale) -->
+        <div id="tattileControls" class="hidden flex-col gap-3">
+            <p id="tattileStato" class="text-center text-gray-300 text-base mb-2">Carica un libro per iniziare.</p>
+
+            <div id="tattileComandi" class="hidden flex-col gap-3">
+                <button id="tPlay" class="bg-yellow-brand text-black rounded-3xl font-bold text-3xl min-h-[120px] w-full">Play</button>
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="tPrev" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[80px] px-2">Capitolo precedente</button>
+                    <button id="tNext" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[80px] px-2">Capitolo successivo</button>
+                    <button id="tBack" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[80px] px-2">Indietro 15 secondi</button>
+                    <button id="tFwd" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[80px] px-2">Avanti 30 secondi</button>
+                </div>
+                <button id="tDove" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Dove sono?</button>
+                <button id="tSegna" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Aggiungi segnalibro</button>
+                <button id="tVel" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Velocità 1</button>
+
+                <button id="tCapitoliBtn" aria-expanded="false" aria-controls="tCapitoliLista" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Elenco capitoli</button>
+                <div id="tCapitoliLista" class="hidden flex-col gap-2"></div>
+
+                <button id="tSegnaBtn" aria-expanded="false" aria-controls="tSegnaLista" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Segnalibri</button>
+                <div id="tSegnaLista" class="hidden flex-col gap-2"></div>
+
+                <label id="tCaricaAltro" role="button" tabindex="0" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full flex items-center justify-center cursor-pointer border border-gray-700">
+                    Carica un altro libro
+                    <input type="file" id="tattileFileInput" accept=".zip,application/zip" class="hidden">
+                </label>
+            </div>
+
+            <div class="mt-4 bg-[#131b26] p-4 rounded-xl border border-gray-800">
+                <h3 class="text-sm text-gray-300 font-bold mb-2">Come funziona</h3>
+                <p class="text-sm text-gray-300 leading-relaxed">Carica un libro DAISY in formato zip. Poi usa i tasti: Play, capitolo precedente e successivo, salti di 15 e 30 secondi. Il tasto "Dove sono?" legge capitolo e tempo. Con lo schermo bloccato, l'ascolto continua e si controlla dalla schermata di blocco.</p>
+            </div>
+        </div>
+
+        <!-- Annunci per VoiceOver (invisibili) -->
+        <div id="annunci" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 
         <!-- TASTONE VOCALE -->
         <button id="blindBtnParla" class="bg-yellow-brand text-[#000000] flex-1 min-h-[250px] rounded-3xl font-bold text-3xl shadow-2xl border-4 border-yellow-brand flex flex-col items-center justify-center gap-4 transition-all active:scale-95">
@@ -195,7 +232,7 @@
         </button>
 
         <!-- Legenda Visiva per Caregiver -->
-        <div class="mt-6 bg-[#131b26] p-4 rounded-xl border border-gray-800">
+        <div id="legendaVocale" class="mt-6 bg-[#131b26] p-4 rounded-xl border border-gray-800">
             <p class="text-xs text-gray-400 font-bold mb-2 uppercase">Comandi Vocali Supportati:</p>
             <p class="text-xs text-gray-300 leading-relaxed">
                 "Leggi", "Stop", "Avanti / Indietro capitolo", "Avanti / Indietro", "Segnalibro", <span class="text-yellow-brand">"Elenca segnalibri"</span>, <span class="text-yellow-brand">"Vai al segnalibro [numero]"</span>, "Veloce", "Lento", "Guida", "Aiuto"
@@ -631,6 +668,9 @@ function lastIndexAtOrBefore(list, t, key) {
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         const useDual = !isIOS;
+        // Su iPhone il riconoscimento vocale non funziona nelle app installate:
+        // l'interfaccia per non vedenti usa tasti pensati per VoiceOver.
+        const touchMode = isIOS || !(window.SpeechRecognition || window.webkitSpeechRecognition);
         let active = 0;
         const P = () => players[active];
 
@@ -662,7 +702,22 @@ function lastIndexAtOrBefore(list, t, key) {
         function lsSet(key, val) { try { localStorage.setItem(key, val); } catch (e) { /* ignoro */ } }
 
         // --- SINTESI VOCALE DI SISTEMA CON CALLBACK DI CHIUSURA ---
+        // Messaggio letto da VoiceOver (regione "live" invisibile)
+        const annunciEl = document.getElementById('annunci');
+        let annuncioTimer = null;
+        function annuncia(testo) {
+            annunciEl.textContent = '';
+            clearTimeout(annuncioTimer);
+            annuncioTimer = setTimeout(() => { annunciEl.textContent = testo; }, 100);
+        }
+
         function parla(testoTestuale, accoda = false, onEndCallback = null) {
+            if (touchMode) {
+                // Con VoiceOver la voce dell'app si sovrapporrebbe: passo il testo a VoiceOver
+                annuncia(testoTestuale);
+                if (onEndCallback) setTimeout(onEndCallback, 0);
+                return;
+            }
             if ('speechSynthesis' in window) {
                 if (!accoda) {
                     speechSynthesis.cancel();
@@ -694,6 +749,11 @@ function lastIndexAtOrBefore(list, t, key) {
                 vistaIpovedente.classList.remove('block');
                 vistaNonVedente.classList.remove('hidden');
                 vistaNonVedente.classList.add('flex');
+                if (touchMode) {
+                    document.getElementById('tattileControls').classList.replace('hidden', 'flex');
+                    blindBtnParla.classList.add('hidden');
+                    document.getElementById('legendaVocale').classList.add('hidden');
+                }
             } else {
                 vistaNonVedente.classList.add('hidden');
                 vistaNonVedente.classList.remove('flex');
@@ -711,7 +771,9 @@ function lastIndexAtOrBefore(list, t, key) {
         btnModeBlind.addEventListener('click', (e) => {
             e.stopPropagation();
             impostaModalita(true);
-            if (!lsGet('daisy_guida_letta')) {
+            if (touchMode) {
+                parla(book ? "Interfaccia a tasti per VoiceOver." : "Interfaccia a tasti per VoiceOver. Carica un libro.");
+            } else if (!lsGet('daisy_guida_letta')) {
                 parla(testoGuida);
                 lsSet('daisy_guida_letta', 'true');
             } else {
@@ -725,7 +787,7 @@ function lastIndexAtOrBefore(list, t, key) {
         };
 
         document.body.addEventListener('click', () => {
-            if (!modeModal.classList.contains('hidden') && !voceInizialeLetta) {
+            if (!touchMode && !modeModal.classList.contains('hidden') && !voceInizialeLetta) {
                 parla("Seleziona l'interfaccia. Tocca in alto per l'interfaccia Visiva per ipovedenti. Tocca in basso per l'interfaccia Vocale per non vedenti.");
                 voceInizialeLetta = true;
             }
@@ -750,6 +812,7 @@ function lastIndexAtOrBefore(list, t, key) {
                 playSvg.classList.add('-translate-x-[1px]');
                 playBtn.setAttribute('aria-label', 'Play');
             }
+            aggiornaTattilePlay();
             if ('mediaSession' in navigator) {
                 try { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; } catch (e) {}
             }
@@ -779,8 +842,10 @@ function lastIndexAtOrBefore(list, t, key) {
         }
 
         // Tempo nel libro intero (secondi)
+        let loadingT = 0;           // posizione di destinazione mentre un capitolo si carica
         function bookTime() {
             if (!book || book.segments.length === 0) return 0;
+            if (switching) return loadingT;
             const seg = book.segments[segIdx];
             const inSeg = Math.min(Math.max(0, P().currentTime - seg.begin), seg.duration);
             return seg.tStart + inSeg;
@@ -882,6 +947,7 @@ function lastIndexAtOrBefore(list, t, key) {
             const seg = book.segments[i];
             const target = seg.begin + Math.max(0, offset);
             segIdx = i;
+            loadingT = seg.tStart + Math.max(0, offset);
             let el = P();
 
             if (el.dataset.src !== seg.src) {
@@ -1009,6 +1075,7 @@ function lastIndexAtOrBefore(list, t, key) {
             const b = chapterBounds(currentChapterIndex);
             chapterTimeTotal.textContent = formatTime(b.end - b.start);
             updateMediaMetadata();
+            aggiornaStatoTattile();
         }
 
         function updateProgressUI() {
@@ -1213,6 +1280,7 @@ function lastIndexAtOrBefore(list, t, key) {
                 div.append(go, del);
                 bookmarksList.appendChild(div);
             });
+            renderTattileSegnalibri();
         }
 
         function askResume(chapterText, timeText) {
@@ -1355,6 +1423,7 @@ function lastIndexAtOrBefore(list, t, key) {
                               startT - book.segments[lastIndexAtOrBefore(book.segments, startT, 'tStart')].tStart, false);
             updateChapterLabels();
             updateProgressUI();
+            mostraComandiTattili();
         }
 
         fileInput.addEventListener('change', gestisciCaricamentoFile);
@@ -1402,6 +1471,161 @@ function lastIndexAtOrBefore(list, t, key) {
             impostaVelocita((currentSpeedIndex + 1) % playbackSpeeds.length);
         });
 
+        // ================================================================
+        // INTERFACCIA A TASTI PER VOICEOVER
+        // ================================================================
+        const tStato = document.getElementById('tattileStato');
+        const tComandi = document.getElementById('tattileComandi');
+        const tPlay = document.getElementById('tPlay');
+        const tVel = document.getElementById('tVel');
+        const tCapitoliBtn = document.getElementById('tCapitoliBtn');
+        const tCapitoliLista = document.getElementById('tCapitoliLista');
+        const tSegnaBtn = document.getElementById('tSegnaBtn');
+        const tSegnaLista = document.getElementById('tSegnaLista');
+
+        // Tempo in parole, adatto alla lettura vocale: "1 ora e 5 minuti", "3 minuti e 20 secondi"
+        function formatTimeVoce(sec) {
+            sec = Math.max(0, Math.floor(sec || 0));
+            const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+            const parti = [];
+            if (h) parti.push(h === 1 ? '1 ora' : h + ' ore');
+            if (m) parti.push(m === 1 ? '1 minuto' : m + ' minuti');
+            if (!h && (s || parti.length === 0)) parti.push(s === 1 ? '1 secondo' : s + ' secondi');
+            return parti.length > 1 ? parti.slice(0, -1).join(', ') + ' e ' + parti[parti.length - 1] : parti[0];
+        }
+
+        function testoVelocita() {
+            return 'Velocità ' + String(currentRate()).replace('.', ',');
+        }
+
+        function descriviPosizione() {
+            if (!book) return 'Nessun libro caricato.';
+            const ch = book.chapters[currentChapterIndex];
+            const b = chapterBounds(currentChapterIndex);
+            const inCh = Math.min(Math.max(0, bookTime() - b.start), b.end - b.start);
+            return `Capitolo ${currentChapterIndex + 1} di ${book.chapters.length}: ${ch.title}. ` +
+                   `${formatTimeVoce(inCh)} su ${formatTimeVoce(b.end - b.start)}.`;
+        }
+
+        function aggiornaTattilePlay() {
+            if (!touchMode) return;
+            tPlay.textContent = isPlaying ? 'Pausa' : 'Play';
+        }
+
+        function aggiornaStatoTattile() {
+            if (!touchMode || !book) return;
+            const ch = book.chapters[currentChapterIndex];
+            tStato.textContent = `Capitolo ${currentChapterIndex + 1} di ${book.chapters.length}: ${ch.title}`;
+        }
+
+        function renderTattileCapitoli() {
+            tCapitoliLista.innerHTML = '';
+            if (!book) return;
+            book.chapters.forEach((ch, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'bg-[#131b26] rounded-xl text-left text-base p-3 border border-gray-700';
+                btn.textContent = `${i + 1}. ${ch.title}`;
+                btn.addEventListener('click', () => {
+                    chiudiLista(tCapitoliBtn, tCapitoliLista);
+                    playChapter(i, true);
+                    annuncia(`Capitolo ${i + 1}: ${ch.title}`);
+                    tPlay.focus();
+                });
+                tCapitoliLista.appendChild(btn);
+            });
+        }
+
+        function renderTattileSegnalibri() {
+            if (!touchMode) return;
+            tSegnaLista.innerHTML = '';
+            tSegnaBtn.textContent = bookmarks.length ? `Segnalibri: ${bookmarks.length}` : 'Segnalibri: nessuno';
+            bookmarks.forEach((bm, i) => {
+                const riga = document.createElement('div');
+                riga.className = 'flex gap-2';
+                const vai = document.createElement('button');
+                vai.className = 'flex-1 bg-[#131b26] rounded-xl text-left text-base p-3 border border-gray-700';
+                vai.textContent = `Segnalibro ${i + 1}: capitolo ${bm.chapterIndex + 1}, ${bm.chapterTitle}, ${formatTimeVoce(bm.time)}`;
+                vai.addEventListener('click', () => {
+                    chiudiLista(tSegnaBtn, tSegnaLista);
+                    goToBookmark(i);
+                    tPlay.focus();
+                });
+                const del = document.createElement('button');
+                del.className = 'bg-[#131b26] rounded-xl text-base p-3 border border-gray-700';
+                del.textContent = 'Elimina';
+                del.setAttribute('aria-label', `Elimina segnalibro ${i + 1}`);
+                del.addEventListener('click', () => {
+                    deleteBookmark(i);
+                    annuncia(`Segnalibro ${i + 1} eliminato.`);
+                    tSegnaBtn.focus();
+                });
+                riga.append(vai, del);
+                tSegnaLista.appendChild(riga);
+            });
+        }
+
+        function apriChiudiLista(btn, lista) {
+            const aperta = btn.getAttribute('aria-expanded') === 'true';
+            btn.setAttribute('aria-expanded', aperta ? 'false' : 'true');
+            lista.classList.toggle('hidden', aperta);
+            lista.classList.toggle('flex', !aperta);
+        }
+        function chiudiLista(btn, lista) {
+            btn.setAttribute('aria-expanded', 'false');
+            lista.classList.add('hidden');
+            lista.classList.remove('flex');
+        }
+
+        function mostraComandiTattili() {
+            if (!touchMode) return;
+            tComandi.classList.replace('hidden', 'flex');
+            blindUploadLabel.classList.add('hidden');
+            renderTattileCapitoli();
+            renderTattileSegnalibri();
+            aggiornaStatoTattile();
+            aggiornaTattilePlay();
+            tVel.textContent = testoVelocita();
+            if (isBlindMode) tPlay.focus();
+        }
+
+        if (touchMode) {
+            document.getElementById('btnModeBlindTesto').textContent = 'Non vedenti (VoiceOver)';
+
+            tPlay.addEventListener('click', () => {
+                if (!book) return;
+                togglePlay();
+                if (!isPlaying) annuncia('In pausa.');
+            });
+            document.getElementById('tPrev').addEventListener('click', () => {
+                if (!book) return;
+                if (currentChapterIndex === 0) { annuncia('Sei già al primo capitolo.'); return; }
+                playChapter(currentChapterIndex - 1, isPlaying);
+                annuncia(`Capitolo ${currentChapterIndex + 1}: ${book.chapters[currentChapterIndex].title}`);
+            });
+            document.getElementById('tNext').addEventListener('click', () => {
+                if (!book) return;
+                if (currentChapterIndex >= book.chapters.length - 1) { annuncia('Sei già all\'ultimo capitolo.'); return; }
+                playChapter(currentChapterIndex + 1, isPlaying);
+                annuncia(`Capitolo ${currentChapterIndex + 1}: ${book.chapters[currentChapterIndex].title}`);
+            });
+            document.getElementById('tBack').addEventListener('click', () => { if (book) jumpTime(-15); });
+            document.getElementById('tFwd').addEventListener('click', () => { if (book) jumpTime(30); });
+            document.getElementById('tDove').addEventListener('click', () => annuncia(descriviPosizione()));
+            document.getElementById('tSegna').addEventListener('click', () => {
+                if (!book) return;
+                addBookmarkBtn.click();
+                annuncia(`Segnalibro ${bookmarks.length} aggiunto.`);
+            });
+            tVel.addEventListener('click', () => {
+                impostaVelocita((currentSpeedIndex + 1) % playbackSpeeds.length);
+                tVel.textContent = testoVelocita();
+                annuncia(testoVelocita());
+            });
+            tCapitoliBtn.addEventListener('click', () => apriChiudiLista(tCapitoliBtn, tCapitoliLista));
+            tSegnaBtn.addEventListener('click', () => apriChiudiLista(tSegnaBtn, tSegnaLista));
+            document.getElementById('tattileFileInput').addEventListener('change', gestisciCaricamentoFile);
+        }
+
         function convertiNumeroTesto(str) {
             const match = str.match(/\d+/);
             if (match) return parseInt(match[0], 10);
@@ -1416,20 +1640,46 @@ function lastIndexAtOrBefore(list, t, key) {
         // --- MOTORE VOCALE (SOLO PER VISTA NON VEDENTE) ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-        if (SpeechRecognition) {
+        if (SpeechRecognition && !touchMode) {
             const recognition = new SpeechRecognition();
             recognition.lang = 'it-IT';
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
 
+            // Se il riconoscimento non risponde, lo dico invece di restare bloccato su "Ascolto..."
+            let guardiano = null;
+            let haRisposto = false;
+            const fermaGuardiano = () => { clearTimeout(guardiano); guardiano = null; };
+
             blindBtnParla.addEventListener('click', () => {
                 blindBtnTesto.textContent = "Ascolto...";
                 blindBtnParla.classList.replace("bg-yellow-brand", "bg-salmon-brand");
                 blindBtnParla.classList.replace("border-yellow-brand", "border-salmon-brand");
+                haRisposto = false;
                 try { recognition.start(); } catch (e) { /* già in ascolto */ }
+                fermaGuardiano();
+                guardiano = setTimeout(() => {
+                    if (haRisposto) return;
+                    try { recognition.abort(); } catch (e) {}
+                    resetPulsanteVocale();
+                    parla("Non ho ricevuto nessun comando. Tocca di nuovo e riprova.");
+                }, 10000);
             });
 
+            recognition.addEventListener('error', (e) => {
+                haRisposto = true;
+                fermaGuardiano();
+                if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+                    parla("Il microfono o il riconoscimento vocale non sono disponibili. Controlla i permessi del microfono.");
+                } else if (e.error === 'no-speech') {
+                    parla("Non ho sentito nulla. Tocca di nuovo e riprova.");
+                }
+            });
+            recognition.addEventListener('end', () => fermaGuardiano());
+
             recognition.addEventListener('result', (e) => {
+                haRisposto = true;
+                fermaGuardiano();
                 let comando = e.results[0][0].transcript.toLowerCase();
                 comando = comando.replace(/[.,!?]/g, '').trim();
 
