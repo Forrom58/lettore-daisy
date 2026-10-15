@@ -5,18 +5,20 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Lettore DAISY</title>
         <link rel="icon" type="image/svg+xml" href="icona_app_daisy.svg">
-        
+        <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
         <meta name="theme-color" content="#000000">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black">
         <meta name="apple-mobile-web-app-title" content="Lettore DAISY">
-        
-        <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"Lettore DAISY","short_name":"DAISY","start_url":"index.html","display":"standalone","background_color":"#000000","theme_color":"#fbbf24","icons":[{"src":"icona_app_daisy.svg","sizes":"any","type":"image/svg+xml"}]}'>
-    
+
+        <link rel="manifest" href="manifest.json">
+
         <script src="https://cdn.tailwindcss.com"></script>
         <style>
-            body { background-color: #000000; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; }
+            html, body { background-color: #000000; }
+            body { color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; }
             .card { background-color: #233040; border-radius: 1.25rem; padding: 1.25rem; margin-bottom: 1.5rem; }
             .icon-box { border-radius: 0.75rem; width: 3rem; height: 3rem; display: flex; align-items: center; justify-content: center; overflow: hidden;}
             .bg-yellow-brand { background-color: #fbbf24; color: #000000; }
@@ -26,18 +28,19 @@
     </head>
 <body class="p-4 max-w-md mx-auto min-h-screen flex flex-col pb-10">
 
-    <audio id="audioPlayer" class="hidden"></audio>
+    <audio id="audioPlayer" class="hidden" preload="auto"></audio>
+    <audio id="audioPlayer2" class="hidden" preload="auto"></audio>
 
     <!-- POP-UP SCELTA INTERFACCIA (Schermo Intero) -->
     <div id="modeModal" class="fixed inset-0 bg-[#000000] flex flex-col items-center justify-center z-[100] hidden">
         <h1 class="text-2xl font-bold text-white mb-8">Seleziona Interfaccia</h1>
         <div class="flex flex-col gap-4 w-full max-w-xs">
             <button id="btnModeVisual" class="bg-[#233040] border border-yellow-brand text-yellow-brand py-8 rounded-2xl text-lg font-bold hover:bg-yellow-brand hover:text-black transition-colors flex flex-col items-center gap-2">
-                <span class="text-3xl">👁️</span>
+                <span class="text-3xl" aria-hidden="true">👁️</span>
                 <span>Visiva (Ipovedenti)</span>
             </button>
             <button id="btnModeBlind" class="bg-yellow-brand border border-yellow-brand text-black py-8 rounded-2xl text-lg font-bold hover:opacity-90 transition-opacity flex flex-col items-center gap-2">
-                <span class="text-3xl">🎤</span>
+                <span class="text-3xl" aria-hidden="true">🎤</span>
                 <span>Vocale (Non Vedenti)</span>
             </button>
         </div>
@@ -49,7 +52,7 @@
     <div id="vistaIpovedente" class="hidden">
         <div class="flex items-center justify-between mb-6">
             <div class="flex items-center gap-4">
-                <div class="icon-box bg-yellow-brand p-0 flex items-center justify-center">
+                <div class="icon-box bg-yellow-brand p-0 flex items-center justify-center" aria-hidden="true">
                  <svg version="1.1" width="532" height="532" viewBox="0 0 532 532" xmlns="http://www.w3.org/2000/svg">
                   <rect style="fill:#f8ae07;fill-opacity:1" width="553.67" height="553.67" x="-10.83" y="-10.83" />
                   <g transform="matrix(1.445,0,0,1.445,-371.84,-228.95)">
@@ -77,7 +80,7 @@
 
         <!-- Pulsante Carica Libro -->
         <label id="uploadLabel" class="card flex items-center gap-4 cursor-pointer hover:bg-[#2c3d52] transition-colors mb-4">
-            <div class="icon-box bg-yellow-brand">
+            <div class="icon-box bg-yellow-brand" aria-hidden="true">
                 <svg class="w-8 h-8" fill="none" stroke="#233040" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                     <path d="M4 4h6l2 3h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
                 </svg>
@@ -86,12 +89,12 @@
                 <h3 class="font-bold text-base truncate">Carica un libro</h3>
                 <p class="text-xs text-gray-400 truncate">Pacchetto DAISY .zip</p>
             </div>
-            <div class="text-yellow-brand text-xl">›</div>
-            <input type="file" id="daisyFileInput" accept=".zip" class="hidden">
+            <div class="text-yellow-brand text-xl" aria-hidden="true">›</div>
+            <input type="file" id="daisyFileInput" accept=".zip,application/zip" class="hidden">
         </label>
 
         <div class="w-full">
-            
+
             <!-- BLOCCO UNICO: LIBRO + CAPITOLO -->
             <div class="card mb-4" id="playerInfoCard">
                 <!-- Sezione Libro -->
@@ -100,7 +103,7 @@
                         <p class="text-[10px] text-yellow-brand font-bold uppercase tracking-wider">Libro in ascolto</p>
                         <h2 id="bookTitle" class="text-lg font-bold leading-tight truncate w-full">Nessun libro caricato</h2>
                     </div>
-                    <button id="speedBtn" class="text-yellow-brand font-bold whitespace-nowrap hover:opacity-80 transition-opacity mt-1 ml-2">1,00 x</button>
+                    <button id="speedBtn" aria-label="Velocità di lettura" class="text-yellow-brand font-bold whitespace-nowrap hover:opacity-80 transition-opacity mt-1 ml-2">1,00 x</button>
                 </div>
                 <div class="w-full bg-gray-700 h-1.5 rounded-full mt-2">
                     <div id="bookProgressBar" class="bg-salmon-brand h-1.5 rounded-full" style="width: 0%;"></div>
@@ -114,7 +117,7 @@
                 <div id="chapterInfoSection" class="hidden border-t border-gray-700 pt-3 mt-3">
                     <p class="text-[10px] text-yellow-brand font-bold uppercase tracking-wider">Capitolo <span id="currentChapter">1</span> di <span id="totalChapters">?</span></p>
                     <h2 id="chapterTitle" class="text-base font-bold truncate mb-3">...</h2>
-                    
+
                     <div class="w-full h-4 cursor-pointer relative" id="chapterProgressContainer">
                         <div class="absolute inset-0 flex items-center">
                             <div class="w-full bg-gray-700 h-1.5 rounded-full pointer-events-none"></div>
@@ -130,24 +133,24 @@
 
             <div class="grid grid-cols-2 gap-3 relative">
                 <button id="prevBtn" class="card m-0 flex flex-col items-center justify-center py-3 px-1 hover:bg-[#2c3d52]">
-                    <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                    <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
                     <span class="text-[13px] leading-tight mt-1 text-center pr-2">Capitolo prec.</span>
                 </button>
                 <button id="nextBtn" class="card m-0 flex flex-col items-center justify-center py-3 px-1 hover:bg-[#2c3d52]">
-                    <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                    <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
                     <span class="text-[13px] leading-tight mt-1 text-center pl-2">Capitolo succ.</span>
                 </button>
                 <button id="skipBackBtn" class="card m-0 flex flex-col items-center justify-center py-3 px-1 hover:bg-[#2c3d52]">
-                    <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
+                    <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 18V6l-8.5 6 8.5 6zm.5-6l8.5 6V6l-8.5 6z"/></svg>
                     <span class="text-[13px] leading-tight mt-1 text-center pr-2">-15 sec</span>
                 </button>
                 <button id="skipForwardBtn" class="card m-0 flex flex-col items-center justify-center py-3 px-1 hover:bg-[#2c3d52]">
-                    <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
+                    <svg class="w-7 h-7 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg>
                     <span class="text-[13px] leading-tight mt-1 text-center pl-2">+30 sec</span>
                 </button>
-                
-                <button id="playBtn" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-brand ring-[8px] ring-[#000000] rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
-                    <svg id="playSvg" class="w-8 h-8 fill-current text-[#000000] -translate-x-[1px]" viewBox="0 0 24 24">
+
+                <button id="playBtn" aria-label="Play" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-brand ring-[8px] ring-[#000000] rounded-full w-16 h-16 flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
+                    <svg id="playSvg" class="w-8 h-8 fill-current text-[#000000] -translate-x-[1px]" viewBox="0 0 24 24" aria-hidden="true">
                         <path id="playIconPath" d="M8 5v14l11-7z"/>
                     </svg>
                 </button>
@@ -160,7 +163,7 @@
                 <div id="bookmarksList" class="mt-4 space-y-2 mb-6">
                 </div>
             </div>
-            
+
             <button onclick="window.apriMenuInterfaccia()" class="w-full mt-8 py-3 text-base text-white underline text-center">Cambia interfaccia</button>
         </div>
     </div>
@@ -169,7 +172,7 @@
     <!-- VISTA NON VEDENTE (Layout Minimalista / Voce)                  -->
     <!-- ============================================================== -->
     <div id="vistaNonVedente" class="hidden flex-col flex-1 pb-4">
-        
+
         <!-- Header Visivo per Caregiver -->
         <div class="text-center mb-6 pt-4 px-2">
             <p class="text-yellow-brand font-bold uppercase tracking-wider text-xs mb-1">Libro in ascolto:</p>
@@ -178,16 +181,16 @@
 
         <!-- Pulsante Carica Libro Dedicato -->
         <label id="blindUploadLabel" class="bg-[#233040] text-white p-6 rounded-2xl flex flex-col items-center justify-center mb-6 cursor-pointer border border-gray-700 active:bg-gray-700 transition-colors">
-            <svg class="w-16 h-16 mb-3" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <svg class="w-16 h-16 mb-3" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M4 4h6l2 3h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/>
             </svg>
             <span class="font-bold text-xl">Carica un libro</span>
-            <input type="file" id="blindFileInput" accept=".zip" class="hidden">
+            <input type="file" id="blindFileInput" accept=".zip,application/zip" class="hidden">
         </label>
 
         <!-- TASTONE VOCALE -->
         <button id="blindBtnParla" class="bg-yellow-brand text-[#000000] flex-1 min-h-[250px] rounded-3xl font-bold text-3xl shadow-2xl border-4 border-yellow-brand flex flex-col items-center justify-center gap-4 transition-all active:scale-95">
-            <span class="text-7xl">🎤</span>
+            <span class="text-7xl" aria-hidden="true">🎤</span>
             <span id="blindBtnTesto">Tocca e Parla</span>
         </button>
 
@@ -198,15 +201,15 @@
                 "Leggi", "Stop", "Avanti / Indietro capitolo", "Avanti / Indietro", "Segnalibro", <span class="text-yellow-brand">"Elenca segnalibri"</span>, <span class="text-yellow-brand">"Vai al segnalibro [numero]"</span>, "Veloce", "Lento", "Guida", "Aiuto"
             </p>
         </div>
-        
+
         <button onclick="window.apriMenuInterfaccia()" class="w-full mt-6 py-3 text-base text-white underline text-center">Cambia interfaccia</button>
     </div>
 
     <!-- MODAL RIPRENDI ASCOLTO -->
-    <div id="resumeModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] hidden">
+    <div id="resumeModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] hidden" role="dialog" aria-modal="true" aria-labelledby="resumeModalTitle">
         <div class="bg-[#233040] p-6 rounded-2xl max-w-sm w-full mx-4 border border-gray-700 shadow-2xl">
-            <h3 class="text-xl font-bold text-white mb-2">Ascolto precedente</h3>
-            <p id="resumeModalText" class="text-gray-300 mb-6 text-sm">Trovato un ascolto precedente per这个 libro. Vuoi riprendere?</p>
+            <h3 id="resumeModalTitle" class="text-xl font-bold text-white mb-2">Ascolto precedente</h3>
+            <p id="resumeModalText" class="text-gray-300 mb-6 text-sm">Trovato un ascolto precedente per questo libro. Vuoi riprendere?</p>
             <div class="flex gap-4">
                 <button id="resumeModalNo" class="flex-1 py-3 rounded-xl bg-[#131b26] text-white font-bold hover:bg-gray-800 transition-colors">No</button>
                 <button id="resumeModalYes" class="flex-1 py-3 rounded-xl bg-yellow-brand text-[#131b26] font-bold hover:opacity-90 transition-opacity">Sì</button>
@@ -214,17 +217,380 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    
+    <script>
+// === DAISY-CORE START ===
+// Parte "pura" del lettore: lettura dello zip e analisi del libro DAISY 2.02.
+// Non tocca l'interfaccia, così può essere provata anche fuori dal browser.
+
+// ---- Lettore ZIP a richiesta: legge dal file solo i pezzi che servono ----
+class ZipReader {
+    constructor(file) {
+        this.file = file;
+        this.entries = new Map();   // nome minuscolo -> voce
+        this.jszip = null;          // usato solo se il browser non sa decomprimere
+    }
+
+    async open() {
+        const size = this.file.size;
+        const tailLen = Math.min(size, 65536 + 22);
+        const tail = new DataView(await this.file.slice(size - tailLen, size).arrayBuffer());
+        let eocd = -1;
+        for (let i = tailLen - 22; i >= 0; i--) {
+            if (tail.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+        }
+        if (eocd < 0) throw new Error("File zip non valido");
+        let count = tail.getUint16(eocd + 10, true);
+        let cdSize = tail.getUint32(eocd + 12, true);
+        let cdOffset = tail.getUint32(eocd + 16, true);
+
+        // ZIP64 (archivi molto grandi o con moltissimi file)
+        if (cdOffset === 0xFFFFFFFF || cdSize === 0xFFFFFFFF || count === 0xFFFF) {
+            const locPos = eocd - 20;
+            if (locPos >= 0 && tail.getUint32(locPos, true) === 0x07064b50) {
+                const z64Offset = Number(tail.getBigUint64(locPos + 8, true));
+                const z64 = new DataView(await this.file.slice(z64Offset, z64Offset + 56).arrayBuffer());
+                if (z64.getUint32(0, true) === 0x06064b50) {
+                    count = Number(z64.getBigUint64(32, true));
+                    cdSize = Number(z64.getBigUint64(40, true));
+                    cdOffset = Number(z64.getBigUint64(48, true));
+                }
+            }
+        }
+
+        const cd = new DataView(await this.file.slice(cdOffset, cdOffset + cdSize).arrayBuffer());
+        const u8 = new Uint8Array(cd.buffer);
+        let p = 0;
+        for (let n = 0; n < count && p + 46 <= cd.byteLength; n++) {
+            if (cd.getUint32(p, true) !== 0x02014b50) break;
+            const flags = cd.getUint16(p + 8, true);
+            const method = cd.getUint16(p + 10, true);
+            let compSize = cd.getUint32(p + 20, true);
+            let uncompSize = cd.getUint32(p + 24, true);
+            const nameLen = cd.getUint16(p + 28, true);
+            const extraLen = cd.getUint16(p + 30, true);
+            const commentLen = cd.getUint16(p + 32, true);
+            let localOffset = cd.getUint32(p + 42, true);
+            const nameBytes = u8.subarray(p + 46, p + 46 + nameLen);
+            const name = decodeBytes(nameBytes, (flags & 0x800) !== 0);
+
+            // Campo extra ZIP64
+            let e = p + 46 + nameLen;
+            const eEnd = e + extraLen;
+            while (e + 4 <= eEnd) {
+                const id = cd.getUint16(e, true);
+                const len = cd.getUint16(e + 2, true);
+                if (id === 0x0001) {
+                    let q = e + 4;
+                    if (uncompSize === 0xFFFFFFFF) { uncompSize = Number(cd.getBigUint64(q, true)); q += 8; }
+                    if (compSize === 0xFFFFFFFF) { compSize = Number(cd.getBigUint64(q, true)); q += 8; }
+                    if (localOffset === 0xFFFFFFFF) { localOffset = Number(cd.getBigUint64(q, true)); q += 8; }
+                }
+                e += 4 + len;
+            }
+
+            if (!name.endsWith('/')) {
+                this.entries.set(name.toLowerCase(), {
+                    name, method, compSize, uncompSize, localOffset,
+                    encrypted: (flags & 1) !== 0
+                });
+            }
+            p += 46 + nameLen + extraLen + commentLen;
+        }
+        if (this.entries.size === 0) throw new Error("Zip vuoto o non leggibile");
+        return this;
+    }
+
+    names() { return Array.from(this.entries.values()).map(e => e.name); }
+
+    // Trova un file: prima il percorso esatto, poi per nome con confine di cartella
+    find(path) {
+        const key = normalizePath(path).toLowerCase();
+        if (this.entries.has(key)) return this.entries.get(key);
+        const base = key.split('/').pop();
+        let found = null;
+        for (const [k, v] of this.entries) {
+            if (k === base || k.endsWith('/' + base)) {
+                if (found) return found; // più di uno: tengo il primo trovato
+                found = v;
+            }
+        }
+        return found;
+    }
+
+    async getBlob(entryOrPath, type = '') {
+        const entry = typeof entryOrPath === 'string' ? this.find(entryOrPath) : entryOrPath;
+        if (!entry) throw new Error("File non trovato nello zip: " + entryOrPath);
+        if (entry.encrypted) throw new Error("File protetto da password: " + entry.name);
+        if (this.jszip) {
+            const b = await this.jszip.file(entry.name).async("blob");
+            return new Blob([b], { type });
+        }
+        const hdr = new DataView(await this.file.slice(entry.localOffset, entry.localOffset + 30).arrayBuffer());
+        if (hdr.getUint32(0, true) !== 0x04034b50) throw new Error("Intestazione zip non valida: " + entry.name);
+        const start = entry.localOffset + 30 + hdr.getUint16(26, true) + hdr.getUint16(28, true);
+        const raw = this.file.slice(start, start + entry.compSize);
+        if (entry.method === 0) {
+            return new Blob([raw], { type });
+        }
+        if (entry.method === 8) {
+            const stream = raw.stream().pipeThrough(new DecompressionStream('deflate-raw'));
+            const out = await new Response(stream).blob();
+            return new Blob([out], { type });
+        }
+        throw new Error("Compressione zip non supportata (" + entry.method + "): " + entry.name);
+    }
+
+    async getText(entryOrPath) {
+        const blob = await this.getBlob(entryOrPath);
+        return decodeBytes(new Uint8Array(await blob.arrayBuffer()), false);
+    }
+}
+
+function canDecompress() {
+    try { new DecompressionStream('deflate-raw'); return true; } catch (e) { return false; }
+}
+
+// Testo: prova UTF-8, se non è valido usa Windows-1252 (vecchi libri con accenti)
+function decodeBytes(bytes, isUtf8) {
+    if (isUtf8) return new TextDecoder('utf-8').decode(bytes);
+    try {
+        return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    } catch (e) {
+        try { return new TextDecoder('windows-1252').decode(bytes); }
+        catch (e2) { return new TextDecoder('utf-8').decode(bytes); }
+    }
+}
+
+function normalizePath(path) {
+    let p = String(path || '').replace(/\\/g, '/');
+    try { p = decodeURIComponent(p); } catch (e) { /* lascio com'è */ }
+    const out = [];
+    for (const part of p.split('/')) {
+        if (part === '' || part === '.') continue;
+        if (part === '..') out.pop(); else out.push(part);
+    }
+    return out.join('/');
+}
+
+function dirOf(path) {
+    const i = path.lastIndexOf('/');
+    return i >= 0 ? path.slice(0, i + 1) : '';
+}
+
+// Tempi SMIL: "npt=12.5s", "12.5s", "0:01:02.5", "1:02", "500ms", "2min", "1h"
+function parseClock(value) {
+    if (value === null || value === undefined) return NaN;
+    let s = String(value).trim().toLowerCase().replace(/^npt\s*=\s*/, '');
+    if (s === '') return NaN;
+    if (s.includes(':')) {
+        const parts = s.split(':').map(Number);
+        if (parts.some(isNaN)) return NaN;
+        return parts.reduce((acc, v) => acc * 60 + v, 0);
+    }
+    let mult = 1;
+    if (s.endsWith('ms')) { mult = 0.001; s = s.slice(0, -2); }
+    else if (s.endsWith('min')) { mult = 60; s = s.slice(0, -3); }
+    else if (s.endsWith('h')) { mult = 3600; s = s.slice(0, -1); }
+    else if (s.endsWith('s')) { s = s.slice(0, -1); }
+    const n = parseFloat(s);
+    return isNaN(n) ? NaN : n * mult;
+}
+
+const ENTITA = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
+    agrave: 'à', aacute: 'á', egrave: 'è', eacute: 'é', igrave: 'ì', iacute: 'í',
+    ograve: 'ò', oacute: 'ó', ugrave: 'ù', uacute: 'ú', Agrave: 'À', Egrave: 'È',
+    Eacute: 'É', Igrave: 'Ì', Ograve: 'Ò', Ugrave: 'Ù', laquo: '«', raquo: '»',
+    rsquo: '’', lsquo: '‘', ldquo: '“', rdquo: '”', hellip: '…', ndash: '–', mdash: '—', ccedil: 'ç' };
+
+function decodeEntities(s) {
+    return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, g) => {
+        if (g[0] === '#') {
+            const code = g[1] === 'x' || g[1] === 'X' ? parseInt(g.slice(2), 16) : parseInt(g.slice(1), 10);
+            try { return String.fromCodePoint(code); } catch (e) { return m; }
+        }
+        return Object.prototype.hasOwnProperty.call(ENTITA, g) ? ENTITA[g] : m;
+    });
+}
+
+function cleanText(html) {
+    return decodeEntities(String(html).replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+}
+
+function parseAttrs(str) {
+    const attrs = {};
+    const re = /([\w:.-]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
+    let m;
+    while ((m = re.exec(str))) attrs[m[1].toLowerCase()] = decodeEntities(m[3] !== undefined ? m[3] : m[4]);
+    return attrs;
+}
+
+// NCC: titolo, intestazioni (capitoli) e ordine dei file SMIL
+function parseNcc(text) {
+    const src = text.replace(/<!--[\s\S]*?-->/g, '');
+    let title = '';
+    const t = src.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    if (t) title = cleanText(t[1]);
+    if (!title) {
+        const metaRe = /<meta\b([^>]*)>/gi; let m;
+        while ((m = metaRe.exec(src))) {
+            const a = parseAttrs(m[1]);
+            if ((a.name || '').toLowerCase() === 'dc:title' && a.content) { title = a.content.trim(); break; }
+        }
+    }
+
+    const headings = [];
+    const hRe = /<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1\s*>/gi; let h;
+    while ((h = hRe.exec(src))) {
+        const a = h[2].match(/<a\b([^>]*)>([\s\S]*?)<\/a\s*>/i);
+        if (!a) continue;
+        const href = parseAttrs(a[1]).href;
+        if (!href || !/\.smil/i.test(href)) continue;
+        headings.push({ level: Number(h[1]), title: cleanText(a[2]) || 'Capitolo senza titolo', href });
+    }
+
+    // Ordine di lettura: tutti i collegamenti .smil nell'ordine in cui compaiono
+    const smilOrder = [];
+    const seen = new Set();
+    const aRe = /<a\b([^>]*)>/gi; let a;
+    while ((a = aRe.exec(src))) {
+        const href = parseAttrs(a[1]).href;
+        if (!href || !/\.smil/i.test(href)) continue;
+        const file = href.split('#')[0];
+        const key = normalizePath(file).toLowerCase();
+        if (!seen.has(key)) { seen.add(key); smilOrder.push(file); }
+    }
+    return { title, headings, smilOrder };
+}
+
+// SMIL: elenco degli spezzoni audio e posizione di ogni id
+function parseSmil(text) {
+    const src = text.replace(/<!--[\s\S]*?-->/g, '');
+    const clips = [];
+    const idToClip = {};
+    let pendingIds = [];
+    const tagRe = /<\s*(\/)?\s*([a-zA-Z][\w:.-]*)([^>]*?)(\/)?\s*>/g; let m;
+    while ((m = tagRe.exec(src))) {
+        if (m[1]) continue; // tag di chiusura
+        const name = m[2].toLowerCase();
+        const attrs = parseAttrs(m[3] || '');
+        if (attrs.id) pendingIds.push(attrs.id);
+        if (name === 'audio' && attrs.src) {
+            const begin = parseClock(attrs['clip-begin'] ?? attrs['clipbegin']);
+            const end = parseClock(attrs['clip-end'] ?? attrs['clipend']);
+            clips.push({ src: attrs.src, begin: isNaN(begin) ? 0 : begin, end: isNaN(end) ? null : end });
+            for (const id of pendingIds) idToClip[id] = clips.length - 1;
+            pendingIds = [];
+        }
+    }
+    for (const id of pendingIds) idToClip[id] = clips.length; // id dopo l'ultimo audio
+    return { clips, idToClip };
+}
+
+function audioMime(path) {
+    const ext = path.split('.').pop().toLowerCase();
+    return { mp3: 'audio/mpeg', mp4: 'audio/mp4', m4a: 'audio/mp4', wav: 'audio/wav', ogg: 'audio/ogg', oga: 'audio/ogg' }[ext] || 'audio/mpeg';
+}
+
+// Costruisce il libro come un'unica linea del tempo continua
+async function buildBook(zip, onProgress) {
+    const nccEntry = zip.names()
+        .filter(n => /(^|\/)ncc\.html?$/i.test(n))
+        .sort((x, y) => x.length - y.length)[0];
+    if (!nccEntry) {
+        const daisy3 = zip.names().some(n => /\.(opf|ncx)$/i.test(n));
+        throw new Error(daisy3 ? "DAISY3" : "NCC_MANCANTE");
+    }
+    const baseDir = dirOf(nccEntry);
+    const ncc = parseNcc(await zip.getText(nccEntry));
+
+    const clips = [];            // spezzoni grezzi con tempo globale
+    const smilFirstClip = {};    // file smil -> indice primo spezzone
+    const smilIds = {};          // file smil -> mappa id -> indice globale
+    const missingAudio = new Set();
+    let t = 0;
+
+    for (let i = 0; i < ncc.smilOrder.length; i++) {
+        const smilPath = normalizePath(baseDir + ncc.smilOrder[i]);
+        const key = smilPath.toLowerCase();
+        const entry = zip.find(smilPath);
+        smilFirstClip[key] = clips.length;
+        smilIds[key] = {};
+        if (!entry) continue;
+        const parsed = parseSmil(await zip.getText(entry));
+        const smilDir = dirOf(entry.name);
+        const offset = clips.length;
+        for (const c of parsed.clips) {
+            const audioEntry = zip.find(normalizePath(smilDir + c.src));
+            if (!audioEntry) { missingAudio.add(c.src); continue; }
+            if (c.end === null || c.end < c.begin) continue; // spezzone senza fine valida
+            clips.push({ src: audioEntry.name, begin: c.begin, end: c.end, t });
+            t += c.end - c.begin;
+        }
+        // Gli id puntano allo spezzone (gli scarti per audio mancante sono rari)
+        for (const id in parsed.idToClip) smilIds[key][id] = Math.min(offset + parsed.idToClip[id], clips.length);
+        if (onProgress) onProgress(i + 1, ncc.smilOrder.length);
+    }
+    const total = t;
+
+    // Unisce spezzoni contigui dello stesso file audio in segmenti
+    const segments = [];
+    for (const c of clips) {
+        const last = segments[segments.length - 1];
+        if (last && last.src === c.src && Math.abs(c.begin - last.end) < 0.05) {
+            last.end = c.end;
+        } else {
+            segments.push({ src: c.src, begin: c.begin, end: c.end, tStart: c.t, type: audioMime(c.src) });
+        }
+    }
+    for (const s of segments) s.duration = s.end - s.begin;
+
+    const timeOfClip = (idx) => idx < clips.length ? clips[idx].t : total;
+
+    let chapters = ncc.headings.map(h => {
+        const [file, frag] = h.href.split('#');
+        const key = normalizePath(baseDir + file).toLowerCase();
+        let idx = smilFirstClip[key];
+        if (frag && smilIds[key] && smilIds[key][frag] !== undefined) idx = smilIds[key][frag];
+        return { title: h.title, level: h.level, t: idx === undefined ? NaN : timeOfClip(idx) };
+    }).filter(c => !isNaN(c.t));
+
+    if (chapters.length === 0 && segments.length > 0) chapters = [{ title: ncc.title || 'Libro', level: 1, t: 0 }];
+
+    // Alcuni libri hanno come titolo solo il codice numerico: uso il primo titolo dell'indice
+    let title = ncc.title || '';
+    if ((!title || /^\d+$/.test(title)) && ncc.headings.length && ncc.headings[0].title.length > title.length) {
+        title = ncc.headings[0].title;
+    }
+
+    return {
+        title: title || 'Libro senza titolo',
+        storageKey: ncc.title || title || 'Libro senza titolo', // nome usato per salvare posizione e segnalibri
+        chapters, segments, total,
+        missingAudio: Array.from(missingAudio)
+    };
+}
+
+// Ricerca binaria: ultimo elemento con chiave <= t
+function lastIndexAtOrBefore(list, t, key) {
+    let lo = 0, hi = list.length - 1, ans = 0;
+    while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (list[mid][key] <= t + 1e-6) { ans = mid; lo = mid + 1; } else hi = mid - 1;
+    }
+    return ans;
+}
+// === DAISY-CORE END ===
+    </script>
+
     <script>
         // DOM Elements principali
         const modeModal = document.getElementById('modeModal');
         const btnModeVisual = document.getElementById('btnModeVisual');
         const btnModeBlind = document.getElementById('btnModeBlind');
-        
+
         const vistaIpovedente = document.getElementById('vistaIpovedente');
         const vistaNonVedente = document.getElementById('vistaNonVedente');
-        
+
         const blindUploadLabel = document.getElementById('blindUploadLabel');
         const blindBookTitle = document.getElementById('blindBookTitle');
         const blindBtnParla = document.getElementById('blindBtnParla');
@@ -233,7 +599,7 @@
         const fileInput = document.getElementById('daisyFileInput');
         const blindFileInput = document.getElementById('blindFileInput');
         const uploadLabel = document.getElementById('uploadLabel');
-        
+
         const uiBookTitle = document.getElementById('bookTitle');
         const uiChapterTitle = document.getElementById('chapterTitle');
         const uiTotalChapters = document.getElementById('totalChapters');
@@ -246,8 +612,7 @@
         const skipBackBtn = document.getElementById('skipBackBtn');
         const skipForwardBtn = document.getElementById('skipForwardBtn');
         const speedBtn = document.getElementById('speedBtn');
-        const audioPlayer = document.getElementById('audioPlayer');
-        
+
         const chapterTimeCurrent = document.getElementById('chapterTimeCurrent');
         const chapterTimeTotal = document.getElementById('chapterTimeTotal');
         const chapterProgressBar = document.getElementById('chapterProgressBar');
@@ -256,23 +621,33 @@
         const bookTimeTotal = document.getElementById('bookTimeTotal');
         const bookProgressBar = document.getElementById('bookProgressBar');
         const chapterInfoSection = document.getElementById('chapterInfoSection');
-        
+
         const addBookmarkBtn = document.getElementById('addBookmarkBtn');
         const bookmarksList = document.getElementById('bookmarksList');
-        
-        let loadedZip = null;
-        let chaptersList = [];
-        let isPlaying = false;
+
+        // Due lettori audio: mentre uno suona, l'altro prepara il capitolo successivo.
+        // Su iPhone/iPad se ne usa uno solo (Safari limita l'avvio automatico di un secondo lettore).
+        const players = [document.getElementById('audioPlayer'), document.getElementById('audioPlayer2')];
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const useDual = !isIOS;
+        let active = 0;
+        const P = () => players[active];
+
+        let zip = null;
+        let book = null;            // { title, chapters, segments, total }
+        let isPlaying = false;      // intenzione dell'utente: ascoltare o no
         let currentChapterIndex = 0;
+        let segIdx = 0;
+        let switching = false;
+        let loadToken = 0;
+        let playToken = 0;
+        let lastSave = 0;
+        const urlCache = new Map(); // percorso audio -> { promise, url }
+
         let isBlindMode = false;
         let voceInizialeLetta = false;
-        
-        let currentChapterAudioList = []; 
-        let currentSnippetIndex = 0;
-        let chapterTotalSeconds = 0;
-        let bookTotalSeconds = 0;
-        let pendingSeekTime = 0; 
-        
+
         const playbackSpeeds = [1.0, 1.25, 1.5, 1.75, 2.0, 0.75];
         let currentSpeedIndex = 0;
         let bookmarks = [];
@@ -282,6 +657,10 @@
         const svgPathPlay = "M8 5v14l11-7z";
         const svgPathPause = "M6 19h4V5H6v14zm8-14v14h4V5h-4z";
 
+        // --- MEMORIA LOCALE PROTETTA (non blocca l'app se il browser la rifiuta) ---
+        function lsGet(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+        function lsSet(key, val) { try { localStorage.setItem(key, val); } catch (e) { /* ignoro */ } }
+
         // --- SINTESI VOCALE DI SISTEMA CON CALLBACK DI CHIUSURA ---
         function parla(testoTestuale, accoda = false, onEndCallback = null) {
             if ('speechSynthesis' in window) {
@@ -290,10 +669,12 @@
                 }
                 const msg = new SpeechSynthesisUtterance(testoTestuale);
                 msg.lang = 'it-IT';
-                msg.rate = 1.1; 
+                msg.rate = 1.1;
                 if (onEndCallback) {
-                    msg.onend = onEndCallback;
-                    msg.onerror = onEndCallback;
+                    let fatto = false;
+                    const una = () => { if (!fatto) { fatto = true; onEndCallback(); } };
+                    msg.onend = una;
+                    msg.onerror = una;
                 }
                 speechSynthesis.speak(msg);
             } else {
@@ -304,10 +685,10 @@
         // --- GESTIONE CAMBIO INTERFACCIA CON POPUP ---
         function impostaModalita(isBlind) {
             isBlindMode = isBlind;
-            localStorage.setItem('daisy_ui_mode', isBlind ? 'blind' : 'visual');
+            lsSet('daisy_ui_mode', isBlind ? 'blind' : 'visual');
             modeModal.classList.add('hidden');
-            voceInizialeLetta = true; 
-            
+            voceInizialeLetta = true;
+
             if (isBlindMode) {
                 vistaIpovedente.classList.add('hidden');
                 vistaIpovedente.classList.remove('block');
@@ -322,7 +703,7 @@
         }
 
         btnModeVisual.addEventListener('click', (e) => {
-            e.stopPropagation(); 
+            e.stopPropagation();
             impostaModalita(false);
             parla("Hai scelto l'interfaccia visiva.");
         });
@@ -330,16 +711,16 @@
         btnModeBlind.addEventListener('click', (e) => {
             e.stopPropagation();
             impostaModalita(true);
-            if (!localStorage.getItem('daisy_guida_letta')) {
+            if (!lsGet('daisy_guida_letta')) {
                 parla(testoGuida);
-                localStorage.setItem('daisy_guida_letta', 'true');
+                lsSet('daisy_guida_letta', 'true');
             } else {
                 parla("Hai scelto la voce per non vedenti. Carica un libro.");
             }
         });
 
         window.apriMenuInterfaccia = function() {
-            voceInizialeLetta = false; 
+            voceInizialeLetta = false;
             modeModal.classList.remove('hidden');
         };
 
@@ -350,22 +731,27 @@
             }
         });
 
-        const savedMode = localStorage.getItem('daisy_ui_mode');
+        const savedMode = lsGet('daisy_ui_mode');
         if (savedMode === 'blind') {
             impostaModalita(true);
         } else if (savedMode === 'visual') {
             impostaModalita(false);
         } else {
-            modeModal.classList.remove('hidden'); 
+            modeModal.classList.remove('hidden');
         }
 
         function updatePlayIcon() {
             if (isPlaying) {
                 playIconPath.setAttribute('d', svgPathPause);
                 playSvg.classList.remove('-translate-x-[1px]');
+                playBtn.setAttribute('aria-label', 'Pausa');
             } else {
                 playIconPath.setAttribute('d', svgPathPlay);
                 playSvg.classList.add('-translate-x-[1px]');
+                playBtn.setAttribute('aria-label', 'Play');
+            }
+            if ('mediaSession' in navigator) {
+                try { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; } catch (e) {}
             }
         }
 
@@ -380,26 +766,423 @@
             return `${m}:${s.toString().padStart(2, '0')}`;
         }
 
-        function parseSmilTime(timeStr) {
-            if (!timeStr) return 0;
-            let s = timeStr.toLowerCase().replace('npt=', '').replace('s', '').trim();
-            if (s.includes(':')) {
-                let parts = s.split(':');
-                if (parts.length === 3) return parseInt(parts[0])*3600 + parseInt(parts[1])*60 + parseFloat(parts[2]);
-                if (parts.length === 2) return parseInt(parts[0])*60 + parseFloat(parts[1]);
+        // ================================================================
+        // MOTORE AUDIO
+        // ================================================================
+        function currentRate() { return playbackSpeeds[currentSpeedIndex]; }
+
+        function applyRate() {
+            for (const el of players) {
+                el.defaultPlaybackRate = currentRate();
+                el.playbackRate = currentRate();
             }
-            return parseFloat(s) || 0;
+        }
+
+        // Tempo nel libro intero (secondi)
+        function bookTime() {
+            if (!book || book.segments.length === 0) return 0;
+            const seg = book.segments[segIdx];
+            const inSeg = Math.min(Math.max(0, P().currentTime - seg.begin), seg.duration);
+            return seg.tStart + inSeg;
+        }
+
+        function chapterBounds(i) {
+            const start = book.chapters[i].t;
+            let end = book.total;
+            for (let j = i + 1; j < book.chapters.length; j++) {
+                if (book.chapters[j].t > start) { end = book.chapters[j].t; break; }
+            }
+            return { start, end };
+        }
+
+        // Tempo dentro il capitolo corrente
+        function chapterTime() {
+            if (!book) return 0;
+            return Math.max(0, bookTime() - book.chapters[currentChapterIndex].t);
+        }
+
+        function getUrl(src, type) {
+            let item = urlCache.get(src);
+            if (!item) {
+                item = { url: null, promise: null };
+                item.promise = zip.getBlob(src, type).then(blob => {
+                    item.url = URL.createObjectURL(blob);
+                    return item.url;
+                });
+                item.promise.catch(() => urlCache.delete(src));
+                urlCache.set(src, item);
+            }
+            return item.promise;
+        }
+
+        // Libera la memoria dei capitoli che non servono più
+        function trimCache(keepSrcs) {
+            const keep = new Set(keepSrcs);
+            for (const el of players) if (el.dataset.src) keep.add(el.dataset.src);
+            for (const [src, item] of urlCache) {
+                if (!keep.has(src) && item.url) {
+                    URL.revokeObjectURL(item.url);
+                    urlCache.delete(src);
+                }
+            }
+        }
+
+        function clearAudio() {
+            loadToken++; playToken++;
+            for (const el of players) {
+                el.pause();
+                el.removeAttribute('src');
+                delete el.dataset.src;
+                try { el.load(); } catch (e) {}
+            }
+            for (const item of urlCache.values()) if (item.url) URL.revokeObjectURL(item.url);
+            urlCache.clear();
+            active = 0;
+        }
+
+        function waitMetadata(el) {
+            return new Promise((resolve, reject) => {
+                if (el.readyState >= 1) return resolve();
+                const ok = () => { cleanup(); resolve(); };
+                const ko = () => { cleanup(); reject(el.error || new Error('errore audio')); };
+                const cleanup = () => { el.removeEventListener('loadedmetadata', ok); el.removeEventListener('error', ko); };
+                el.addEventListener('loadedmetadata', ok);
+                el.addEventListener('error', ko);
+            });
+        }
+
+        // Avvia l'audio controllando l'esito; se il telefono lo rifiuta riprova,
+        // e se proprio non riesce mostra "pausa" (basta allora un solo tocco su Play).
+        function safePlay(attempt = 0) {
+            const tok = ++playToken;
+            const el = P();
+            let pr;
+            try { pr = el.play(); } catch (e) { pr = Promise.reject(e); }
+            if (!pr || !pr.then) return;
+            pr.then(() => {
+                if (tok === playToken) updatePlayIcon();
+            }).catch(err => {
+                if (tok !== playToken || !isPlaying) return;
+                console.warn('Avvio audio non riuscito:', err && err.name, 'tentativo', attempt + 1);
+                if (attempt < 4) {
+                    setTimeout(() => {
+                        if (isPlaying && P().paused && tok === playToken) safePlay(attempt + 1);
+                    }, 800 * (attempt + 1));
+                } else {
+                    isPlaying = false;
+                    updatePlayIcon();
+                    saveLastPosition(true);
+                }
+            });
+        }
+
+        async function loadSegment(i, offset = 0, autoplay = isPlaying) {
+            if (!book || i < 0 || i >= book.segments.length) return;
+            const tok = ++loadToken;
+            const seg = book.segments[i];
+            const target = seg.begin + Math.max(0, offset);
+            segIdx = i;
+            let el = P();
+
+            if (el.dataset.src !== seg.src) {
+                const other = players[1 - active];
+                if (useDual && other.dataset.src === seg.src && other.readyState >= 1) {
+                    // Il capitolo successivo è già pronto nell'altro lettore: scambio immediato
+                    active = 1 - active;
+                    el.pause();
+                    el = P();
+                    el.playbackRate = currentRate();
+                    if (Math.abs(el.currentTime - target) > 0.3) el.currentTime = target;
+                } else {
+                    switching = true;
+                    try {
+                        const url = await getUrl(seg.src, seg.type);
+                        if (tok !== loadToken) return;
+                        el.src = url;
+                        el.dataset.src = seg.src;
+                        el.defaultPlaybackRate = currentRate();
+                        el.playbackRate = currentRate();
+                        await waitMetadata(el);
+                        if (tok !== loadToken) return;
+                        el.currentTime = target;
+                    } catch (e) {
+                        console.error('Errore nel caricamento audio:', seg.src, e);
+                        if (tok === loadToken) {
+                            switching = false;
+                            // Salta lo spezzone illeggibile
+                            if (i + 1 < book.segments.length) return loadSegment(i + 1, 0, autoplay);
+                        }
+                        return;
+                    } finally {
+                        if (tok === loadToken) switching = false;
+                    }
+                }
+            } else if (Math.abs(el.currentTime - target) > 0.3) {
+                el.currentTime = target;
+            }
+
+            if (autoplay && isPlaying) safePlay();
+            syncChapterFromTime();
+            updateProgressUI();
+            prepareNext();
+        }
+
+        // Prepara in anticipo il prossimo file audio
+        function prepareNext() {
+            if (!book) return;
+            const cur = book.segments[segIdx];
+            let next = null;
+            for (let j = segIdx + 1; j < book.segments.length; j++) {
+                if (book.segments[j].src !== cur.src) { next = book.segments[j]; break; }
+            }
+            trimCache(next ? [cur.src, next.src] : [cur.src]);
+            if (!next) return;
+            const nextSrc = next.src;
+            getUrl(nextSrc, next.type).then(url => {
+                if (!useDual) return;
+                const other = players[1 - active];
+                if (other.dataset.src === nextSrc) return;
+                other.pause();
+                other.src = url;
+                other.dataset.src = nextSrc;
+                other.defaultPlaybackRate = currentRate();
+                other.playbackRate = currentRate();
+                waitMetadata(other).then(() => {
+                    if (other !== P() && other.dataset.src === nextSrc) other.currentTime = next.begin;
+                }).catch(() => {});
+            }).catch(err => console.warn('Preparazione capitolo successivo non riuscita:', err));
+        }
+
+        // Passa allo spezzone successivo
+        function advance() {
+            if (!book || switching) return;
+            const n = segIdx + 1;
+            if (n >= book.segments.length) {
+                isPlaying = false;
+                updatePlayIcon();
+                saveLastPosition(true);
+                if (isBlindMode) parla("Fine del libro.");
+                return;
+            }
+            const cur = book.segments[segIdx];
+            const nx = book.segments[n];
+            if (nx.src === cur.src && Math.abs(nx.begin - P().currentTime) < 0.3) {
+                segIdx = n;  // continua senza interruzioni nello stesso file
+                syncChapterFromTime();
+                prepareNext();
+                return;
+            }
+            loadSegment(n, 0, true);
+        }
+
+        function seekBook(t, autoplay = isPlaying) {
+            if (!book || book.segments.length === 0) return;
+            t = Math.max(0, Math.min(t, book.total - 0.05));
+            const i = lastIndexAtOrBefore(book.segments, t, 'tStart');
+            const seg = book.segments[i];
+            const offset = Math.min(t - seg.tStart, Math.max(0, seg.duration - 0.05));
+            if (i === segIdx && P().dataset.src === seg.src && !switching) {
+                P().currentTime = seg.begin + offset;
+                if (autoplay && isPlaying && P().paused) safePlay();
+                syncChapterFromTime();
+                updateProgressUI();
+            } else {
+                loadSegment(i, offset, autoplay);
+            }
+        }
+
+        function syncChapterFromTime() {
+            if (!book) return;
+            const t = bookTime();
+            const idx = lastIndexAtOrBefore(book.chapters, t, 't');
+            if (idx !== currentChapterIndex && book.chapters[idx].t !== book.chapters[currentChapterIndex].t) {
+                currentChapterIndex = idx;
+            }
+            updateChapterLabels();
+        }
+
+        function updateChapterLabels() {
+            if (!book) return;
+            const ch = book.chapters[currentChapterIndex];
+            uiChapterTitle.textContent = ch.title;
+            uiCurrentChapter.textContent = currentChapterIndex + 1;
+            const b = chapterBounds(currentChapterIndex);
+            chapterTimeTotal.textContent = formatTime(b.end - b.start);
+            updateMediaMetadata();
+        }
+
+        function updateProgressUI() {
+            if (!book) return;
+            const t = bookTime();
+            const b = chapterBounds(currentChapterIndex);
+            const inCh = Math.max(0, t - b.start);
+            const len = b.end - b.start;
+            chapterTimeCurrent.textContent = formatTime(inCh);
+            chapterProgressBar.style.width = (len > 0 ? Math.min(inCh / len * 100, 100) : 0) + "%";
+            bookTimeCurrent.textContent = formatTime(t);
+            bookProgressBar.style.width = (book.total > 0 ? Math.min(t / book.total * 100, 100) : 0) + "%";
+        }
+
+        function onTimeUpdate(e) {
+            if (e.target !== P() || !book || switching) return;
+            const el = P();
+            const seg = book.segments[segIdx];
+            // Fine di uno spezzone che non coincide con la fine del file
+            if (seg && el.currentTime >= seg.end - 0.05 && isFinite(el.duration) && seg.end < el.duration - 0.25) {
+                advance();
+                return;
+            }
+            syncChapterFromTime();
+            updateProgressUI();
+            saveLastPosition();
+        }
+
+        function onEnded(e) {
+            if (e.target !== P()) return;
+            advance();
+        }
+
+        // Pausa decisa dal sistema (telefonata, altra app, cuffie staccate)
+        function onPauseEvent(e) {
+            if (e.target !== P() || switching || P().ended) return;
+            if (isPlaying) {
+                isPlaying = false;
+                updatePlayIcon();
+                saveLastPosition(true);
+            }
+        }
+
+        function onPlayEvent(e) {
+            if (e.target !== P()) return;
+            if (!isPlaying) { isPlaying = true; updatePlayIcon(); }
+        }
+
+        function onAudioError(e) {
+            if (e.target !== P() || switching || !book) return;
+            console.error('Errore audio:', P().error);
+            if (isPlaying) advance();
+        }
+
+        for (const el of players) {
+            el.addEventListener('timeupdate', onTimeUpdate);
+            el.addEventListener('ended', onEnded);
+            el.addEventListener('pause', onPauseEvent);
+            el.addEventListener('play', onPlayEvent);
+            el.addEventListener('error', onAudioError);
+        }
+
+        // Quando lo schermo si riaccende: se doveva suonare ma è fermo, riparte da solo
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                if (book && isPlaying && P().paused && !switching) safePlay();
+            } else {
+                saveLastPosition(true);
+            }
+        });
+        window.addEventListener('pagehide', () => saveLastPosition(true));
+
+        function pausePlayback() {
+            isPlaying = false;
+            playToken++;
+            P().pause();
+            updatePlayIcon();
+            saveLastPosition(true);
+        }
+
+        function resumePlayback() {
+            if (!book) return;
+            isPlaying = true;
+            updatePlayIcon();
+            if (switching) return; // partirà a caricamento finito
+            safePlay();
+        }
+
+        function togglePlay() {
+            if (!book) return;
+            if (isPlaying) pausePlayback(); else resumePlayback();
+        }
+
+        // --- COMANDI DA SCHERMATA DI BLOCCO, NOTIFICA E CUFFIE ---
+        function setupMediaSession() {
+            if (!('mediaSession' in navigator)) return;
+            const ms = navigator.mediaSession;
+            const h = (action, fn) => { try { ms.setActionHandler(action, fn); } catch (e) {} };
+            h('play', () => { if (!isPlaying) resumePlayback(); });
+            h('pause', () => { if (isPlaying) pausePlayback(); });
+            h('stop', () => { if (isPlaying) pausePlayback(); });
+            h('previoustrack', () => playChapter(currentChapterIndex - 1, isPlaying));
+            h('nexttrack', () => playChapter(currentChapterIndex + 1, isPlaying));
+            h('seekbackward', () => jumpTime(-15));
+            h('seekforward', () => jumpTime(30));
+        }
+        setupMediaSession();
+
+        let lastMetaKey = '';
+        function updateMediaMetadata() {
+            if (!('mediaSession' in navigator) || !book || typeof MediaMetadata === 'undefined') return;
+            const ch = book.chapters[currentChapterIndex];
+            const key = book.title + '|' + currentChapterIndex;
+            if (key === lastMetaKey) return;
+            lastMetaKey = key;
+            try {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: ch.title,
+                    artist: book.title,
+                    album: 'Lettore DAISY',
+                    artwork: [
+                        { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
+                        { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }
+                    ]
+                });
+            } catch (e) {}
+        }
+
+        // ================================================================
+        // POSIZIONE E SEGNALIBRI
+        // ================================================================
+        function bookKey() { return book ? book.storageKey : ''; }
+
+        function saveLastPosition(force = false) {
+            if (!book) return;
+            const now = Date.now();
+            if (!force && now - lastSave < 3000) return;
+            lastSave = now;
+            const t = bookTime();
+            lsSet('daisy_progress_' + bookKey(), JSON.stringify({
+                v: 2, t,
+                chapterIndex: currentChapterIndex,
+                time: Math.max(0, t - book.chapters[currentChapterIndex].t)
+            }));
+        }
+
+        function getLastPosition() {
+            if (!book) return null;
+            try {
+                const s = JSON.parse(lsGet('daisy_progress_' + bookKey()));
+                if (!s) return null;
+                if (typeof s.t === 'number') return s.t;
+                // Formato della versione precedente: capitolo + secondi nel capitolo
+                if (typeof s.chapterIndex === 'number' && book.chapters[s.chapterIndex]) {
+                    return book.chapters[s.chapterIndex].t + (s.time || 0);
+                }
+            } catch (e) {}
+            return null;
+        }
+
+        function bookmarkTime(bm) {
+            if (typeof bm.t === 'number') return bm.t;
+            const ch = book.chapters[bm.chapterIndex];
+            return ch ? ch.t + (bm.time || 0) : 0;
         }
 
         function loadBookmarks() {
-            if(!uiBookTitle.textContent) return;
-            const saved = localStorage.getItem('daisy_bookmarks_' + uiBookTitle.textContent);
-            bookmarks = saved ? JSON.parse(saved) : [];
+            try { bookmarks = JSON.parse(lsGet('daisy_bookmarks_' + bookKey())) || []; }
+            catch (e) { bookmarks = []; }
             renderBookmarks();
         }
 
         function saveBookmarks() {
-            localStorage.setItem('daisy_bookmarks_' + uiBookTitle.textContent, JSON.stringify(bookmarks));
+            lsSet('daisy_bookmarks_' + bookKey(), JSON.stringify(bookmarks));
             renderBookmarks();
         }
 
@@ -408,33 +1191,28 @@
             bookmarks.forEach((bm, index) => {
                 const div = document.createElement('div');
                 div.className = "flex justify-between items-center bg-[#233040] p-3 rounded-lg border border-gray-700";
-                div.innerHTML = `
-                    <div class="flex-1 cursor-pointer hover:text-yellow-brand truncate pr-2" onclick="goToBookmark(${index})">
-                        <p class="text-xs text-gray-400">Capitolo ${bm.chapterIndex + 1} - ${bm.displayTime}</p>
-                        <p class="text-sm font-bold truncate">${bm.chapterTitle}</p>
-                    </div>
-                    <button onclick="deleteBookmark(${index})" class="text-gray-500 hover:text-salmon-brand p-2 bg-[#000000] rounded-md transition-colors">🗑️</button>
-                `;
+
+                const go = document.createElement('button');
+                go.className = "flex-1 text-left cursor-pointer hover:text-yellow-brand truncate pr-2";
+                const riga1 = document.createElement('p');
+                riga1.className = "text-xs text-gray-400";
+                riga1.textContent = `Capitolo ${bm.chapterIndex + 1} - ${bm.displayTime}`;
+                const riga2 = document.createElement('p');
+                riga2.className = "text-sm font-bold truncate";
+                riga2.textContent = bm.chapterTitle;
+                go.append(riga1, riga2);
+                go.setAttribute('aria-label', `Vai al segnalibro ${index + 1}: ${bm.chapterTitle}, ${bm.displayTime}`);
+                go.addEventListener('click', () => goToBookmark(index));
+
+                const del = document.createElement('button');
+                del.className = "text-gray-500 hover:text-salmon-brand p-2 bg-[#000000] rounded-md transition-colors";
+                del.textContent = '🗑️';
+                del.setAttribute('aria-label', `Elimina segnalibro ${index + 1}`);
+                del.addEventListener('click', () => deleteBookmark(index));
+
+                div.append(go, del);
                 bookmarksList.appendChild(div);
             });
-        }
-
-        function saveLastPosition() {
-            if (!uiBookTitle.textContent || chaptersList.length === 0) return;
-            if (currentChapterAudioList.length === 0 || !currentChapterAudioList[currentSnippetIndex]) return;
-            
-            const absoluteCurrentTime = currentChapterAudioList[currentSnippetIndex].startOffset + audioPlayer.currentTime;
-            const state = {
-                chapterIndex: currentChapterIndex,
-                time: absoluteCurrentTime
-            };
-            localStorage.setItem('daisy_progress_' + uiBookTitle.textContent, JSON.stringify(state));
-        }
-
-        function getLastPosition() {
-            if (!uiBookTitle.textContent) return null;
-            const saved = localStorage.getItem('daisy_progress_' + uiBookTitle.textContent);
-            return saved ? JSON.parse(saved) : null;
         }
 
         function askResume(chapterText, timeText) {
@@ -446,21 +1224,12 @@
 
                 modalText.textContent = `Trovato un ascolto precedente per questo libro.\nVuoi riprendere dal Capitolo ${chapterText} (${timeText})?`;
                 modal.classList.remove('hidden');
-                
+                btnYes.focus();
+
                 if (isBlindMode) parla(`Vuoi riprendere l'ascolto dal capitolo ${chapterText}? Tocca sì o no sullo schermo.`, true);
 
-                const handleYes = () => {
-                    modal.classList.add('hidden');
-                    cleanup();
-                    resolve(true);
-                };
-
-                const handleNo = () => {
-                    modal.classList.add('hidden');
-                    cleanup();
-                    resolve(false);
-                };
-
+                const handleYes = () => { modal.classList.add('hidden'); cleanup(); resolve(true); };
+                const handleNo = () => { modal.classList.add('hidden'); cleanup(); resolve(false); };
                 const cleanup = () => {
                     btnYes.removeEventListener('click', handleYes);
                     btnNo.removeEventListener('click', handleNo);
@@ -472,341 +1241,175 @@
         }
 
         addBookmarkBtn.addEventListener('click', () => {
-            if (currentChapterAudioList.length === 0) return;
-            let absoluteCurrentTime = currentChapterAudioList[currentSnippetIndex].startOffset + audioPlayer.currentTime;
+            if (!book) return;
+            const t = bookTime();
+            const inCh = Math.max(0, t - book.chapters[currentChapterIndex].t);
             bookmarks.push({
+                t,
                 chapterIndex: currentChapterIndex,
-                chapterTitle: chaptersList[currentChapterIndex].title,
-                time: absoluteCurrentTime,
-                displayTime: formatTime(absoluteCurrentTime)
+                chapterTitle: book.chapters[currentChapterIndex].title,
+                time: inCh,
+                displayTime: formatTime(inCh)
             });
             saveBookmarks();
         });
 
-        window.goToBookmark = async function(index) {
+        window.goToBookmark = function(index) {
             const bm = bookmarks[index];
-            if (bm.chapterIndex !== currentChapterIndex) {
-                await playChapter(bm.chapterIndex, true, bm.time);
-            } else {
-                seekToTime(bm.time);
-                if (!isPlaying) {
-                    audioPlayer.play();
-                    isPlaying = true;
-                    updatePlayIcon();
-                }
-            }
-        }
+            if (!bm || !book) return;
+            isPlaying = true;
+            updatePlayIcon();
+            if (book.chapters[bm.chapterIndex]) currentChapterIndex = bm.chapterIndex;
+            seekBook(bookmarkTime(bm), true);
+        };
 
         window.deleteBookmark = function(index) {
             bookmarks.splice(index, 1);
             saveBookmarks();
+        };
+
+        // ================================================================
+        // CARICAMENTO LIBRO
+        // ================================================================
+        function caricaScript(url) {
+            return new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = url; s.onload = resolve; s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+
+        function mostraTitolo(testo) {
+            uiBookTitle.textContent = testo;
+            blindBookTitle.textContent = testo;
         }
 
         async function gestisciCaricamentoFile(event) {
             const file = event.target.files[0];
+            event.target.value = ''; // permette di ricaricare lo stesso file
             if (!file) return;
 
-            uiBookTitle.textContent = "Caricamento in corso...";
-            blindBookTitle.textContent = "Caricamento in corso...";
+            if (isPlaying) pausePlayback();
+            mostraTitolo("Caricamento in corso...");
             if (isBlindMode) parla("Sto caricando il libro, attendi.");
-            
-            chaptersList = [];
-            bookTotalSeconds = 0;
+
+            clearAudio();
+            book = null;
+            bookmarks = [];
             bookmarksList.innerHTML = '';
 
-            if (file.name.toLowerCase().endsWith('.zip')) {
-                try {
-                    loadedZip = new JSZip();
-                    const zipContent = await loadedZip.loadAsync(file);
-                    
-                    let nccFile = null;
-                    zipContent.forEach(function (relativePath, zipEntry) {
-                        if (relativePath.toLowerCase().endsWith('ncc.html') || relativePath.toLowerCase().endsWith('ncc.htm')) {
-                            nccFile = zipEntry;
-                        }
-                    });
-
-                    if (nccFile) {
-                        const nccText = await nccFile.async("string");
-                        const parser = new DOMParser();
-                        const htmlDoc = parser.parseFromString(nccText, "text/html");
-                        
-                        const titleTag = htmlDoc.querySelector("title") || htmlDoc.querySelector("meta[name='dc:title']");
-                        if (titleTag) {
-                            const titoloLetto = titleTag.tagName.toLowerCase() === 'meta' ? titleTag.getAttribute('content') : titleTag.textContent;
-                            uiBookTitle.textContent = titoloLetto;
-                            blindBookTitle.textContent = titoloLetto;
-                            loadBookmarks();
-                            
-                            if (isBlindMode) parla("Libro caricato: " + titoloLetto, true);
-                        }
-
-                        const totalTimeMeta = htmlDoc.querySelector("meta[name='ncc:totalTime']");
-                        if (totalTimeMeta) {
-                            bookTotalSeconds = parseSmilTime(totalTimeMeta.getAttribute('content'));
-                            bookTimeTotal.textContent = formatTime(bookTotalSeconds);
-                        } else {
-                            bookTimeTotal.textContent = "N/D";
-                        }
-
-                        const allLinks = Array.from(htmlDoc.querySelectorAll("a"));
-                        const smilLinks = allLinks.filter(link => {
-                            const href = link.getAttribute('href');
-                            return href && href.toLowerCase().includes('.smil');
-                        });
-
-                        smilLinks.forEach(link => {
-                            chaptersList.push({
-                                title: link.textContent.trim() || "Capitolo senza titolo",
-                                smilTarget: link.getAttribute('href').split('#')[0]
-                            });
-                        });
-
-                        uiTotalChapters.textContent = chaptersList.length;
-
-                        if (chaptersList.length > 0) {
-                            uploadLabel.classList.add('hidden');
-                            blindUploadLabel.classList.add('hidden');
-                            chapterInfoSection.classList.remove('hidden');
-
-                            const lastState = getLastPosition();
-                            let startChapter = 0;
-                            let startTime = 0;
-
-                            if (lastState && lastState.time > 0) {
-                                const minuttiFormattati = formatTime(lastState.time);
-                                const wantsToResume = await askResume(lastState.chapterIndex + 1, minuttiFormattati);
-                                if (wantsToResume) {
-                                    startChapter = lastState.chapterIndex;
-                                    startTime = lastState.time;
-                                }
-                            }
-
-                            await playChapter(startChapter, false, startTime);
-                        } else {
-                            uiChapterTitle.textContent = "Nessun capitolo trovato";
-                            chapterInfoSection.classList.remove('hidden');
-                        }
-                    } else {
-                        uiBookTitle.textContent = "Formato non supportato";
-                        blindBookTitle.textContent = "Formato non supportato";
-                    }
-                } catch (error) {
-                    console.error("Errore:", error);
-                    uiBookTitle.textContent = "Errore di caricamento";
-                    blindBookTitle.textContent = "Errore di caricamento";
+            try {
+                zip = await new ZipReader(file).open();
+                if (!canDecompress()) {
+                    // Browser vecchio: uso JSZip (carica tutto lo zip in memoria)
+                    await caricaScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+                    zip.jszip = await new JSZip().loadAsync(file);
                 }
+                book = await buildBook(zip, (fatti, totali) => {
+                    mostraTitolo(`Caricamento in corso... ${Math.round(fatti / totali * 100)}%`);
+                });
+            } catch (error) {
+                console.error("Errore:", error);
+                book = null;
+                let msg = "Errore di caricamento";
+                if (error && error.message === 'DAISY3') msg = "Libro DAISY 3: non ancora supportato";
+                else if (error && error.message === 'NCC_MANCANTE') msg = "Formato non supportato";
+                mostraTitolo(msg);
+                if (isBlindMode) parla(msg);
+                return;
             }
+
+            if (book.missingAudio.length) console.warn('File audio mancanti nello zip:', book.missingAudio);
+
+            mostraTitolo(book.title);
+            if (isBlindMode) parla("Libro caricato: " + book.title, true);
+            bookTimeTotal.textContent = formatTime(book.total);
+            uiTotalChapters.textContent = book.chapters.length;
+            loadBookmarks();
+
+            if (book.segments.length === 0) {
+                uiChapterTitle.textContent = "Nessun capitolo trovato";
+                chapterInfoSection.classList.remove('hidden');
+                book = null;
+                return;
+            }
+
+            uploadLabel.classList.add('hidden');
+            blindUploadLabel.classList.add('hidden');
+            chapterInfoSection.classList.remove('hidden');
+
+            currentChapterIndex = 0;
+            segIdx = 0;
+            let startT = 0;
+            const lastT = getLastPosition();
+            if (lastT !== null && lastT > 1) {
+                const idx = lastIndexAtOrBefore(book.chapters, lastT, 't');
+                const inCh = lastT - book.chapters[idx].t;
+                const wantsToResume = await askResume(idx + 1, formatTime(inCh));
+                if (wantsToResume) { startT = lastT; currentChapterIndex = idx; }
+            }
+
+            isPlaying = false;
+            updatePlayIcon();
+            await loadSegment(lastIndexAtOrBefore(book.segments, startT, 'tStart'),
+                              startT - book.segments[lastIndexAtOrBefore(book.segments, startT, 'tStart')].tStart, false);
+            updateChapterLabels();
+            updateProgressUI();
         }
 
         fileInput.addEventListener('change', gestisciCaricamentoFile);
         blindFileInput.addEventListener('change', gestisciCaricamentoFile);
 
-        async function loadChapterAudio(smilFileName, startTime = 0) {
-            if (!loadedZip) return;
-            
-            try {
-                const smilFile = Object.values(loadedZip.files).find(f => f.name.toLowerCase().endsWith(smilFileName.toLowerCase()));
-                if (!smilFile) return;
-
-                const smilText = await smilFile.async("string");
-                const parser = new DOMParser();
-                const smilDoc = parser.parseFromString(smilText, "text/xml");
-                
-                const audioNodes = Array.from(smilDoc.getElementsByTagName("audio"));
-                currentChapterAudioList = [];
-                chapterTotalSeconds = 0;
-
-                audioNodes.forEach(node => {
-                    let begin = parseSmilTime(node.getAttribute("clip-begin") || node.getAttribute("clipBegin"));
-                    let end = parseSmilTime(node.getAttribute("clip-end") || node.getAttribute("clipEnd"));
-                    let duration = end - begin;
-                    if (duration < 0 || isNaN(duration)) duration = 0;
-                    
-                    currentChapterAudioList.push({
-                        src: node.getAttribute("src"),
-                        duration: duration,
-                        startOffset: chapterTotalSeconds
-                    });
-                    chapterTotalSeconds += duration;
-                });
-
-                chapterTimeTotal.textContent = formatTime(chapterTotalSeconds);
-                chapterProgressBar.style.width = "0%";
-                
-                if (startTime > 0) {
-                    let startSnippet = 0;
-                    for (let i = 0; i < currentChapterAudioList.length; i++) {
-                        let snip = currentChapterAudioList[i];
-                        if (startTime >= snip.startOffset && startTime < (snip.startOffset + snip.duration)) {
-                            startSnippet = i;
-                            break;
-                        }
-                    }
-                    currentSnippetIndex = startSnippet;
-                    pendingSeekTime = startTime - currentChapterAudioList[startSnippet].startOffset;
-                } else {
-                    currentSnippetIndex = 0;
-                    pendingSeekTime = 0;
-                }
-                
-                await prepareSnippet(currentSnippetIndex);
-                
-            } catch (e) {
-                console.error("Errore nel caricamento del capitolo:", e);
-            }
-        }
-
-        async function prepareSnippet(index) {
-            if (index >= currentChapterAudioList.length) {
-                if (currentChapterIndex < chaptersList.length - 1) {
-                    playChapter(currentChapterIndex + 1, isPlaying);
-                } else {
-                    isPlaying = false;
-                    updatePlayIcon();
-                }
-                return;
-            }
-
-            const snippet = currentChapterAudioList[index];
-            const mp3File = Object.values(loadedZip.files).find(f => f.name.toLowerCase().endsWith(snippet.src.toLowerCase()));
-            
-            if (mp3File) {
-                const mp3Blob = await mp3File.async("blob");
-                const audioUrl = URL.createObjectURL(mp3Blob);
-                
-                audioPlayer.src = audioUrl;
-                audioPlayer.playbackRate = playbackSpeeds[currentSpeedIndex];
-                
-                audioPlayer.onloadedmetadata = () => {
-                    if (pendingSeekTime > 0) {
-                        audioPlayer.currentTime = pendingSeekTime;
-                        pendingSeekTime = 0;
-                    }
-                    if (isPlaying) {
-                        audioPlayer.play();
-                    }
-                };
-            } else {
-                currentSnippetIndex++;
-                prepareSnippet(currentSnippetIndex);
-            }
-        }
-
-        audioPlayer.addEventListener('ended', () => {
-            currentSnippetIndex++;
-            prepareSnippet(currentSnippetIndex);
-        });
-
-        audioPlayer.addEventListener('timeupdate', () => {
-            if (currentChapterAudioList.length === 0 || !currentChapterAudioList[currentSnippetIndex]) return;
-            
-            const currentSnippet = currentChapterAudioList[currentSnippetIndex];
-            const currentChapterTime = currentSnippet.startOffset + audioPlayer.currentTime;
-            
-            chapterTimeCurrent.textContent = formatTime(currentChapterTime);
-            
-            if (chapterTotalSeconds > 0) {
-                const chapterPercent = (currentChapterTime / chapterTotalSeconds) * 100;
-                chapterProgressBar.style.width = Math.min(chapterPercent, 100) + "%";
-            }
-
-            if (bookTotalSeconds > 0 && chaptersList.length > 0) {
-                const bookProgressPercent = ((currentChapterIndex + (currentChapterTime / chapterTotalSeconds)) / chaptersList.length) * 100;
-                bookProgressBar.style.width = Math.min(bookProgressPercent, 100) + "%";
-                const estimatedCurrentBookTime = (bookTotalSeconds / chaptersList.length) * (currentChapterIndex + (currentChapterTime / chapterTotalSeconds));
-                bookTimeCurrent.textContent = formatTime(estimatedCurrentBookTime);
-            }
-
-            saveLastPosition();
-        });
-
-        async function playChapter(index, autoPlay = true, startTime = 0) {
-            if (index < 0 || index >= chaptersList.length) return;
-            
+        // ================================================================
+        // NAVIGAZIONE
+        // ================================================================
+        function playChapter(index, autoPlay = true, startTime = 0) {
+            if (!book || index < 0 || index >= book.chapters.length) return;
             currentChapterIndex = index;
-            uiChapterTitle.textContent = chaptersList[index].title;
-            uiCurrentChapter.textContent = currentChapterIndex + 1;
-            
-            audioPlayer.pause();
             isPlaying = autoPlay;
+            if (!autoPlay) { playToken++; P().pause(); }
             updatePlayIcon();
-            
-            await loadChapterAudio(chaptersList[index].smilTarget, startTime);
-        }
-
-        function seekToTime(targetTime) {
-            if (currentChapterAudioList.length === 0) return;
-            
-            if (targetTime < 0) targetTime = 0;
-            if (targetTime > chapterTotalSeconds) targetTime = chapterTotalSeconds - 0.1;
-            
-            let newSnippetIndex = 0;
-            for (let i = 0; i < currentChapterAudioList.length; i++) {
-                let snip = currentChapterAudioList[i];
-                if (targetTime >= snip.startOffset && targetTime < (snip.startOffset + snip.duration)) {
-                    newSnippetIndex = i;
-                    break;
-                }
-            }
-            
-            let targetTimeInSnippet = targetTime - currentChapterAudioList[newSnippetIndex].startOffset;
-            
-            if (newSnippetIndex === currentSnippetIndex) {
-                audioPlayer.currentTime = targetTimeInSnippet;
-            } else {
-                currentSnippetIndex = newSnippetIndex;
-                pendingSeekTime = targetTimeInSnippet;
-                audioPlayer.pause(); 
-                prepareSnippet(currentSnippetIndex);
-            }
+            updateChapterLabels();
+            seekBook(book.chapters[index].t + startTime, autoPlay);
         }
 
         function jumpTime(secondsToAdd) {
-            if (currentChapterAudioList.length === 0) return;
-            let absoluteCurrentTime = currentChapterAudioList[currentSnippetIndex].startOffset + audioPlayer.currentTime;
-            seekToTime(absoluteCurrentTime + secondsToAdd);
+            if (!book) return;
+            seekBook(bookTime() + secondsToAdd);
         }
 
         chapterProgressContainer.addEventListener('click', (e) => {
-            if (currentChapterAudioList.length === 0 || chapterTotalSeconds === 0) return;
+            if (!book) return;
             const rect = chapterProgressContainer.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const percentage = Math.max(0, Math.min(1, clickX / rect.width));
-            const targetTime = percentage * chapterTotalSeconds;
-            seekToTime(targetTime);
+            const percentage = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            const b = chapterBounds(currentChapterIndex);
+            seekBook(b.start + percentage * (b.end - b.start));
         });
 
         prevBtn.addEventListener('click', () => playChapter(currentChapterIndex - 1, isPlaying));
         nextBtn.addEventListener('click', () => playChapter(currentChapterIndex + 1, isPlaying));
         skipBackBtn.addEventListener('click', () => jumpTime(-15));
         skipForwardBtn.addEventListener('click', () => jumpTime(30));
+        playBtn.addEventListener('click', togglePlay);
 
-        playBtn.addEventListener('click', () => {
-            if (currentChapterAudioList.length === 0) return;
-            if (isPlaying) {
-                audioPlayer.pause();
-            } else {
-                audioPlayer.play();
-            }
-            isPlaying = !isPlaying;
-            updatePlayIcon();
-        });
+        function impostaVelocita(index) {
+            currentSpeedIndex = index;
+            applyRate();
+            speedBtn.textContent = currentRate().toFixed(2).replace('.', ',') + ' x';
+        }
 
         speedBtn.addEventListener('click', () => {
-            currentSpeedIndex = (currentSpeedIndex + 1) % playbackSpeeds.length;
-            const newSpeed = playbackSpeeds[currentSpeedIndex];
-            audioPlayer.playbackRate = newSpeed;
-            speedBtn.textContent = newSpeed.toFixed(2).replace('.', ',') + ' x';
+            impostaVelocita((currentSpeedIndex + 1) % playbackSpeeds.length);
         });
 
         function convertiNumeroTesto(str) {
-            const mappa = { 'uno': 1, 'due': 2, 'tre': 3, 'quattro': 4, 'cinque': 5, 'sei': 6, 'sette': 7, 'otto': 8, 'nove': 9, 'dieci': 10 };
-            for (let parola in mappa) {
-                if (str.includes(parola)) return mappa[parola];
-            }
             const match = str.match(/\d+/);
             if (match) return parseInt(match[0], 10);
+            const mappa = { 'dieci': 10, 'nove': 9, 'otto': 8, 'sette': 7, 'sei': 6, 'cinque': 5, 'quattro': 4, 'tre': 3, 'due': 2, 'uno': 1 };
+            const parole = str.split(/\s+/);
+            for (const p of parole) {
+                if (mappa[p]) return mappa[p];
+            }
             return null;
         }
 
@@ -823,7 +1426,7 @@
                 blindBtnTesto.textContent = "Ascolto...";
                 blindBtnParla.classList.replace("bg-yellow-brand", "bg-salmon-brand");
                 blindBtnParla.classList.replace("border-yellow-brand", "border-salmon-brand");
-                recognition.start();
+                try { recognition.start(); } catch (e) { /* già in ascolto */ }
             });
 
             recognition.addEventListener('result', (e) => {
@@ -831,53 +1434,21 @@
                 comando = comando.replace(/[.,!?]/g, '').trim();
 
                 // 1. Interrompi subito l'audio del libro per evitare sovrapposizioni con la voce di feedback
-                audioPlayer.pause();
-                isPlaying = false;
-                updatePlayIcon();
+                if (book) pausePlayback();
 
-                // Funzione di utilità per far ripartire l'ascolto DOPO che la voce ha finito di parlare
-                const riprendiAscolto = () => {
-                    if (currentChapterAudioList.length > 0) {
-                        audioPlayer.play();
-                        isPlaying = true;
-                        updatePlayIcon();
-                    }
-                };
+                // Fa ripartire l'ascolto DOPO che la voce ha finito di parlare
+                const riprendiAscolto = () => { if (book) resumePlayback(); };
 
+                // L'ordine conta: prima i comandi più lunghi e specifici
                 if (comando.includes('aiuto') || comando.includes('comandi')) {
                     parla("I comandi sono: Leggi, Stop, Avanti un capitolo, Indietro un capitolo, Avanti, Indietro, Segnalibro, Elenca segnalibri, Vai al segnalibro seguito dal numero, Veloce, Lento, Guida.");
                 } else if (comando.includes('guida') || comando.includes('istruzioni') || comando.includes('tutorial')) {
                     parla(testoGuida);
-                } else if (comando.includes('leggi') || comando.includes('play')) {
-                    parla("In riproduzione", false, riprendiAscolto);
-                } else if (comando.includes('stop') || comando.includes('ferma')) {
-                    parla("In pausa"); // Rimane in pausa
-                } else if ((comando.includes('avanti') && comando.includes('capitolo')) || comando.includes('capitolo successivo')) {
-                    parla("Capitolo successivo", false, () => {
-                        playChapter(currentChapterIndex + 1, false).then(() => riprendiAscolto());
-                        // Fallback nel caso playChapter non restituisca una Promise
-                        setTimeout(riprendiAscolto, 500); 
-                    });
-                } else if ((comando.includes('indietro') && comando.includes('capitolo')) || comando.includes('capitolo precedente')) {
-                    parla("Capitolo precedente", false, () => {
-                        playChapter(currentChapterIndex - 1, false);
-                        setTimeout(riprendiAscolto, 500);
-                    });
-                } else if (comando.includes('avanti')) {
-                    parla("Avanti", false, () => {
-                        jumpTime(30);
-                        riprendiAscolto();
-                    });
-                } else if (comando.includes('indietro')) {
-                    parla("Indietro", false, () => {
-                        jumpTime(-15);
-                        riprendiAscolto();
-                    });
-                } else if (comando.includes('elenca segnalibri') || comando.includes('leggi segnalibri')) {
+                } else if (comando.includes('elenca segnalibri') || comando.includes('leggi segnalibri') || comando.includes('elenco segnalibri')) {
                     if (bookmarks.length === 0) {
                         parla("Non hai nessun segnalibro salvato.");
                     } else {
-                        let txt = "Hai " + bookmarks.length + " segnalibri. ";
+                        let txt = "Hai " + bookmarks.length + (bookmarks.length === 1 ? " segnalibro. " : " segnalibri. ");
                         bookmarks.forEach((bm, i) => {
                             txt += "Numero " + (i + 1) + ", " + bm.chapterTitle + ". ";
                         });
@@ -895,32 +1466,34 @@
                 } else if (comando.includes('segnalibro')) {
                     addBookmarkBtn.click();
                     parla("Segnalibro aggiunto", false, riprendiAscolto);
+                } else if ((comando.includes('avanti') && comando.includes('capitolo')) || comando.includes('capitolo successivo')) {
+                    parla("Capitolo successivo", false, () => playChapter(currentChapterIndex + 1, true));
+                } else if ((comando.includes('indietro') && comando.includes('capitolo')) || comando.includes('capitolo precedente')) {
+                    parla("Capitolo precedente", false, () => playChapter(currentChapterIndex - 1, true));
+                } else if (comando.includes('leggi') || comando.includes('play')) {
+                    parla("In riproduzione", false, riprendiAscolto);
+                } else if (comando.includes('stop') || comando.includes('ferma')) {
+                    parla("In pausa"); // Rimane in pausa
+                } else if (comando.includes('avanti')) {
+                    parla("Avanti", false, () => {
+                        jumpTime(30);
+                        riprendiAscolto();
+                    });
+                } else if (comando.includes('indietro')) {
+                    parla("Indietro", false, () => {
+                        jumpTime(-15);
+                        riprendiAscolto();
+                    });
                 } else if (comando.includes('veloce')) {
-                    let current = playbackSpeeds[currentSpeedIndex];
-                    let s = current + 0.25;
-                    if (s > 2.0) s = 2.0;
-                    
-                    let newIndex = playbackSpeeds.indexOf(s);
-                    if (newIndex !== -1) currentSpeedIndex = newIndex;
-                    
-                    audioPlayer.playbackRate = s;
-                    speedBtn.textContent = s.toFixed(2).replace('.', ',') + ' x';
-                    
-                    let feedback = s === 2.0 ? "Velocità massima" : "Velocità aumentata";
-                    parla(feedback, false, riprendiAscolto);
+                    const s = Math.min(currentRate() + 0.25, 2.0);
+                    const idx = playbackSpeeds.indexOf(s);
+                    if (idx !== -1) impostaVelocita(idx);
+                    parla(s === 2.0 ? "Velocità massima" : "Velocità aumentata", false, riprendiAscolto);
                 } else if (comando.includes('lento')) {
-                    let current = playbackSpeeds[currentSpeedIndex];
-                    let s = current - 0.25;
-                    if (s < 0.75) s = 0.75;
-                    
-                    let newIndex = playbackSpeeds.indexOf(s);
-                    if (newIndex !== -1) currentSpeedIndex = newIndex;
-                    
-                    audioPlayer.playbackRate = s;
-                    speedBtn.textContent = s.toFixed(2).replace('.', ',') + ' x';
-                    
-                    let feedback = s === 0.75 ? "Velocità minima" : "Velocità diminuita";
-                    parla(feedback, false, riprendiAscolto);
+                    const s = Math.max(currentRate() - 0.25, 0.75);
+                    const idx = playbackSpeeds.indexOf(s);
+                    if (idx !== -1) impostaVelocita(idx);
+                    parla(s === 0.75 ? "Velocità minima" : "Velocità diminuita", false, riprendiAscolto);
                 } else {
                     parla("Comando non riconosciuto");
                 }
@@ -931,7 +1504,7 @@
             recognition.addEventListener('end', () => resetPulsanteVocale());
 
             function resetPulsanteVocale() {
-                blindBtnTesto.innerHTML = "Tocca e Parla";
+                blindBtnTesto.textContent = "Tocca e Parla";
                 blindBtnParla.classList.replace("bg-salmon-brand", "bg-yellow-brand");
                 blindBtnParla.classList.replace("border-salmon-brand", "border-yellow-brand");
             }
@@ -941,31 +1514,10 @@
 
     </script>
     <script>
-        // Registrazione Service Worker
+        // Registrazione Service Worker (file sw.js accanto a index.html)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                const swCode = `
-                    const CACHE_NAME = 'daisy-offline-v1';
-                    self.addEventListener('install', (e) => { self.skipWaiting(); });
-                    self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
-                    self.addEventListener('fetch', (e) => {
-                        if (e.request.method !== 'GET') return;
-                        e.respondWith(
-                            fetch(e.request).then((response) => {
-                                const clone = response.clone();
-                                caches.open(CACHE_NAME).then((cache) => { cache.put(e.request, clone); });
-                                return response;
-                            }).catch(() => {
-                                return caches.match(e.request).then((cached) => {
-                                    return cached || caches.match('index.html') || caches.match('./');
-                                });
-                            })
-                        );
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'text/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW error:', err));
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
             });
         }
     </script>
