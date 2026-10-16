@@ -1067,27 +1067,39 @@ function lastIndexAtOrBefore(list, t, key) {
             updateChapterLabels();
         }
 
+        // Scrive nella pagina solo se il valore cambia davvero.
+        // Riscrivere di continuo lo stesso testo disturba VoiceOver (i tocchi sui tasti vanno persi).
+        function setText(el, val) {
+            val = String(val);
+            if (el.textContent !== val) el.textContent = val;
+        }
+        function setWidth(el, val) {
+            if (el.style.width !== val) el.style.width = val;
+        }
+
         function updateChapterLabels() {
             if (!book) return;
             const ch = book.chapters[currentChapterIndex];
-            uiChapterTitle.textContent = ch.title;
-            uiCurrentChapter.textContent = currentChapterIndex + 1;
+            setText(uiChapterTitle, ch.title);
+            setText(uiCurrentChapter, currentChapterIndex + 1);
             const b = chapterBounds(currentChapterIndex);
-            chapterTimeTotal.textContent = formatTime(b.end - b.start);
+            setText(chapterTimeTotal, formatTime(b.end - b.start));
             updateMediaMetadata();
             aggiornaStatoTattile();
         }
 
         function updateProgressUI() {
             if (!book) return;
+            // Con l'interfaccia a tasti la parte visiva è nascosta: non serve aggiornarla
+            if (isBlindMode) return;
             const t = bookTime();
             const b = chapterBounds(currentChapterIndex);
             const inCh = Math.max(0, t - b.start);
             const len = b.end - b.start;
-            chapterTimeCurrent.textContent = formatTime(inCh);
-            chapterProgressBar.style.width = (len > 0 ? Math.min(inCh / len * 100, 100) : 0) + "%";
-            bookTimeCurrent.textContent = formatTime(t);
-            bookProgressBar.style.width = (book.total > 0 ? Math.min(t / book.total * 100, 100) : 0) + "%";
+            setText(chapterTimeCurrent, formatTime(inCh));
+            setWidth(chapterProgressBar, (len > 0 ? Math.min(inCh / len * 100, 100) : 0).toFixed(1) + "%");
+            setText(bookTimeCurrent, formatTime(t));
+            setWidth(bookProgressBar, (book.total > 0 ? Math.min(t / book.total * 100, 100) : 0).toFixed(2) + "%");
         }
 
         function onTimeUpdate(e) {
@@ -1509,13 +1521,13 @@ function lastIndexAtOrBefore(list, t, key) {
 
         function aggiornaTattilePlay() {
             if (!touchMode) return;
-            tPlay.textContent = isPlaying ? 'Pausa' : 'Play';
+            setText(tPlay, isPlaying ? 'Pausa' : 'Play');
         }
 
         function aggiornaStatoTattile() {
             if (!touchMode || !book) return;
             const ch = book.chapters[currentChapterIndex];
-            tStato.textContent = `Capitolo ${currentChapterIndex + 1} di ${book.chapters.length}: ${ch.title}`;
+            setText(tStato, `Capitolo ${currentChapterIndex + 1} di ${book.chapters.length}: ${ch.title}`);
         }
 
         function renderTattileCapitoli() {
