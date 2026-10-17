@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prova VoiceOver</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background: #000; color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 16px; max-width: 480px; margin-inline: auto; }
+  h1 { font-size: 1.5rem; color: #fbbf24; }
+  h2 { font-size: 1.2rem; margin: 0 0 8px; }
+  p { font-size: 1rem; line-height: 1.5; }
+  .prova { background: #233040; border-radius: 16px; padding: 16px; margin: 16px 0; }
+  button { display: block; width: 100%; min-height: 64px; margin: 8px 0; border: 0; border-radius: 14px; font-size: 1.2rem; font-weight: bold; }
+  .avvia { background: #fbbf24; color: #000; }
+  .ferma { background: #131b26; color: #fff; border: 1px solid #4b5563; }
+  .controllo { background: #374151; color: #fff; }
+</style>
+</head>
+<body>
+  <h1>Prova VoiceOver</h1>
+  <p>Per ogni prova: attiva "Avvia". Quando senti il suono, scorri a destra sul tasto "Tasto di controllo". VoiceOver lo legge? Poi attiva "Ferma" e passa alla prova successiva.</p>
+  <p id="supporto"></p>
+
+  <div class="prova">
+    <h2>Prova A: audio semplice</h2>
+    <button class="avvia" data-prova="A">Avvia prova A</button>
+    <button class="controllo">Tasto di controllo A</button>
+    <button class="ferma">Ferma</button>
+  </div>
+
+  <div class="prova">
+    <h2>Prova B: come la nostra app</h2>
+    <button class="avvia" data-prova="B">Avvia prova B</button>
+    <button class="controllo">Tasto di controllo B</button>
+    <button class="ferma">Ferma</button>
+  </div>
+
+  <div class="prova" id="provaC">
+    <h2>Prova C: app con sessione audio "riproduzione"</h2>
+    <button class="avvia" data-prova="C">Avvia prova C</button>
+    <button class="controllo">Tasto di controllo C</button>
+    <button class="ferma">Ferma</button>
+  </div>
+
+  <div class="prova" id="provaD">
+    <h2>Prova D: app con sessione audio "misto"</h2>
+    <button class="avvia" data-prova="D">Avvia prova D</button>
+    <button class="controllo">Tasto di controllo D</button>
+    <button class="ferma">Ferma</button>
+  </div>
+
+  <div class="prova">
+    <h2>Prova E: motore audio alternativo</h2>
+    <button class="avvia" data-prova="E">Avvia prova E</button>
+    <button class="controllo">Tasto di controllo E</button>
+    <button class="ferma">Ferma</button>
+  </div>
+
+  <p>Fine delle prove.</p>
+
+<script>
+const FILE = 'suono-prova.wav';
+const supporto = document.getElementById('supporto');
+const haSessione = 'audioSession' in navigator;
+supporto.textContent = haSessione
+  ? 'Sessione audio: supportata.'
+  : 'Sessione audio: non supportata su questo telefono, le prove C e D vengono saltate.';
+if (!haSessione) {
+  document.getElementById('provaC').hidden = true;
+  document.getElementById('provaD').hidden = true;
+}
+
+let audio = null, ctx = null, sorgente = null, blobUrl = null;
+
+function ferma() {
+  if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); audio = null; }
+  if (sorgente) { try { sorgente.stop(); } catch (e) {} sorgente = null; }
+  if (haSessione) { try { navigator.audioSession.type = 'auto'; } catch (e) {} }
+}
+
+async function getBlobUrl() {
+  if (!blobUrl) {
+    const r = await fetch(FILE);
+    blobUrl = URL.createObjectURL(await r.blob());
+  }
+  return blobUrl;
+}
+
+async function avvia(prova) {
+  ferma();
+  if (prova === 'A') {
+    audio = new Audio(FILE);
+  } else if (prova === 'B' || prova === 'C' || prova === 'D') {
+    if (prova === 'C') navigator.audioSession.type = 'playback';
+    if (prova === 'D') navigator.audioSession.type = 'ambient';
+    audio = document.createElement('audio');
+    audio.style.display = 'none';
+    document.body.appendChild(audio);
+    audio.src = await getBlobUrl();
+  } else if (prova === 'E') {
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    await ctx.resume();
+    const dati = await (await fetch(FILE)).arrayBuffer();
+    const buffer = await ctx.decodeAudioData(dati);
+    sorgente = ctx.createBufferSource();
+    sorgente.buffer = buffer; sorgente.loop = true;
+    sorgente.connect(ctx.destination);
+    sorgente.start();
+    return;
+  }
+  audio.loop = true;
+  try { await audio.play(); } catch (e) { console.error(e); }
+}
+
+document.querySelectorAll('.avvia').forEach(b => b.addEventListener('click', () => avvia(b.dataset.prova)));
+document.querySelectorAll('.ferma').forEach(b => b.addEventListener('click', ferma));
+</script>
+</body>
+</html>
