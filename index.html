@@ -24,9 +24,15 @@
             .bg-yellow-brand { background-color: #fbbf24; color: #000000; }
             .bg-salmon-brand { background-color: #f87171; color: #000000; }
             .text-yellow-brand { color: #fbbf24; }
+            .solo-lettore { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
         </style>
     </head>
 <body class="p-4 max-w-md mx-auto min-h-screen flex flex-col pb-10">
+
+    <!-- Messaggi per VoiceOver: due zone invisibili, sempre presenti dall'apertura della pagina.
+         Si alternano perché VoiceOver su iPhone a volte ignora un testo scritto due volte nello stesso punto. -->
+    <div id="annunciA" class="solo-lettore" role="status" aria-live="assertive" aria-atomic="true"></div>
+    <div id="annunciB" class="solo-lettore" role="status" aria-live="assertive" aria-atomic="true"></div>
 
     <audio id="audioPlayer" class="hidden" preload="auto"></audio>
     <audio id="audioPlayer2" class="hidden" preload="auto"></audio>
@@ -190,7 +196,7 @@
 
         <!-- CONTROLLI A TASTI PER VOICEOVER (iPhone / browser senza riconoscimento vocale) -->
         <div id="tattileControls" class="hidden flex-col gap-3">
-            <p id="tattileStato" class="text-center text-gray-300 text-base mb-2">Carica un libro per iniziare.</p>
+            <p id="tattileStato" tabindex="-1" class="text-center text-gray-300 text-base mb-2">Carica un libro per iniziare.</p>
 
             <div id="tattileComandi" class="hidden flex-col gap-3">
                 <button id="tPlay" class="bg-yellow-brand text-black rounded-3xl font-bold text-3xl min-h-[120px] w-full">Play</button>
@@ -223,7 +229,6 @@
         </div>
 
         <!-- Annunci per VoiceOver (invisibili) -->
-        <div id="annunci" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 
         <!-- TASTONE VOCALE -->
         <button id="blindBtnParla" class="bg-yellow-brand text-[#000000] flex-1 min-h-[250px] rounded-3xl font-bold text-3xl shadow-2xl border-4 border-yellow-brand flex flex-col items-center justify-center gap-4 transition-all active:scale-95">
@@ -703,13 +708,18 @@ function lastIndexAtOrBefore(list, t, key) {
 
         // --- SINTESI VOCALE DI SISTEMA CON CALLBACK DI CHIUSURA ---
         // Messaggio letto da VoiceOver (regione "live" invisibile)
-        const annunciEl = document.getElementById('annunci');
+        const zoneAnnunci = [document.getElementById('annunciA'), document.getElementById('annunciB')];
+        let zonaAnnuncio = 0;
         let annuncioTimer = null;
         function annuncia(testo) {
-            annunciEl.textContent = '';
             clearTimeout(annuncioTimer);
-            annuncioTimer = setTimeout(() => { annunciEl.textContent = testo; }, 100);
+            zoneAnnunci[0].textContent = '';
+            zoneAnnunci[1].textContent = '';
+            zonaAnnuncio = 1 - zonaAnnuncio;
+            const zona = zoneAnnunci[zonaAnnuncio];
+            annuncioTimer = setTimeout(() => { zona.textContent = testo; }, 150);
         }
+        function ultimoAnnuncio() { return zoneAnnunci[0].textContent || zoneAnnunci[1].textContent; }
 
         function parla(testoTestuale, accoda = false, onEndCallback = null) {
             if (touchMode) {
@@ -1524,8 +1534,20 @@ function lastIndexAtOrBefore(list, t, key) {
             setText(tPlay, isPlaying ? 'Pausa' : 'Play');
         }
 
+        // Risposta letta da VoiceOver spostando il cursore sulla riga in alto.
+        // Spostare il cursore è il modo più sicuro su iPhone; la riga resta ferma
+        // finché VoiceOver ci rimane sopra, poi torna a mostrare il capitolo.
+        let statoBloccato = false;
+        function rispostaInAlto(testo) {
+            statoBloccato = true;
+            setText(tStato, testo);
+            tStato.focus();
+            // se il cursore non ci arriva, il messaggio viene comunque mandato a VoiceOver
+            setTimeout(() => { if (document.activeElement !== tStato) { statoBloccato = false; annuncia(testo); aggiornaStatoTattile(); } }, 300);
+        }
+
         function aggiornaStatoTattile() {
-            if (!touchMode || !book) return;
+            if (!touchMode || !book || statoBloccato) return;
             const ch = book.chapters[currentChapterIndex];
             setText(tStato, `Capitolo ${currentChapterIndex + 1} di ${book.chapters.length}: ${ch.title}`);
         }
@@ -1622,12 +1644,19 @@ function lastIndexAtOrBefore(list, t, key) {
             });
             document.getElementById('tBack').addEventListener('click', () => { if (book) jumpTime(-15); });
             document.getElementById('tFwd').addEventListener('click', () => { if (book) jumpTime(30); });
-            document.getElementById('tDove').addEventListener('click', () => annuncia(descriviPosizione()));
+            document.getElementById('tDove').addEventListener('click', () => rispostaInAlto(descriviPosizione()));
             document.getElementById('tSegna').addEventListener('click', () => {
                 if (!book) return;
                 addBookmarkBtn.click();
-                annuncia(`Segnalibro ${bookmarks.length} aggiunto.`);
+                const bm = bookmarks[bookmarks.length - 1];
+                rispostaInAlto(`Segnalibro ${bookmarks.length} aggiunto: capitolo ${bm.chapterIndex + 1}, ${formatTimeVoce(bm.time)}.`);
             });
+            tStato.addEventListener('blur', () => { statoBloccato = false; aggiornaStatoTattile(); });
+            // Qualsiasi altro tasto riporta la riga in alto a mostrare il capitolo
+            tComandi.addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (btn && btn.id !== 'tDove' && btn.id !== 'tSegna') statoBloccato = false;
+            }, true);
             tVel.addEventListener('click', () => {
                 impostaVelocita((currentSpeedIndex + 1) % playbackSpeeds.length);
                 tVel.textContent = testoVelocita();
