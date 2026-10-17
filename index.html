@@ -224,7 +224,7 @@
 
             <div class="mt-4 bg-[#131b26] p-4 rounded-xl border border-gray-800">
                 <h3 class="text-sm text-gray-300 font-bold mb-2">Come funziona</h3>
-                <p class="text-sm text-gray-300 leading-relaxed">Carica un libro DAISY in formato zip. Poi usa i tasti: Play, capitolo precedente e successivo, salti di 15 e 30 secondi. Il tasto "Dove sono?" legge capitolo e tempo. Con lo schermo bloccato, l'ascolto continua e si controlla dalla schermata di blocco.</p>
+                <p class="text-sm text-gray-300 leading-relaxed">Carica un libro DAISY in formato zip. Poi usa i tasti: Play, capitolo precedente e successivo, salti di 15 e 30 secondi. Il tasto "Dove sono?" legge capitolo e tempo. Su iPhone, mentre il libro suona, VoiceOver non riesce a leggere: per esplorare i tasti metti prima in pausa con il primo tasto. "Dove sono?", "Aggiungi segnalibro", "Elenco capitoli" e "Segnalibri" mettono in pausa da soli; per riprendere premi Play. Con lo schermo bloccato, l'ascolto continua e si controlla dalla schermata di blocco.</p>
             </div>
         </div>
 
@@ -1644,12 +1644,24 @@ function lastIndexAtOrBefore(list, t, key) {
             });
             document.getElementById('tBack').addEventListener('click', () => { if (book) jumpTime(-15); });
             document.getElementById('tFwd').addEventListener('click', () => { if (book) jumpTime(30); });
-            document.getElementById('tDove').addEventListener('click', () => rispostaInAlto(descriviPosizione()));
+            // Su iPhone VoiceOver non riesce a parlare mentre Safari suona audio:
+            // i tasti che rispondono a voce mettono prima in pausa il libro.
+            const pausaPerVoiceOver = () => {
+                if (!isPlaying) return '';
+                pausePlayback();
+                return ' Libro in pausa, premi Play per riprendere.';
+            };
+            document.getElementById('tDove').addEventListener('click', () => {
+                if (!book) { rispostaInAlto('Nessun libro caricato.'); return; }
+                const nota = pausaPerVoiceOver();
+                rispostaInAlto(descriviPosizione() + nota);
+            });
             document.getElementById('tSegna').addEventListener('click', () => {
                 if (!book) return;
+                const nota = pausaPerVoiceOver();
                 addBookmarkBtn.click();
                 const bm = bookmarks[bookmarks.length - 1];
-                rispostaInAlto(`Segnalibro ${bookmarks.length} aggiunto: capitolo ${bm.chapterIndex + 1}, ${formatTimeVoce(bm.time)}.`);
+                rispostaInAlto(`Segnalibro ${bookmarks.length} aggiunto: capitolo ${bm.chapterIndex + 1}, ${formatTimeVoce(bm.time)}.` + nota);
             });
             tStato.addEventListener('blur', () => { statoBloccato = false; aggiornaStatoTattile(); });
             // Qualsiasi altro tasto riporta la riga in alto a mostrare il capitolo
@@ -1662,8 +1674,14 @@ function lastIndexAtOrBefore(list, t, key) {
                 tVel.textContent = testoVelocita();
                 annuncia(testoVelocita());
             });
-            tCapitoliBtn.addEventListener('click', () => apriChiudiLista(tCapitoliBtn, tCapitoliLista));
-            tSegnaBtn.addEventListener('click', () => apriChiudiLista(tSegnaBtn, tSegnaLista));
+            tCapitoliBtn.addEventListener('click', () => {
+                if (tCapitoliBtn.getAttribute('aria-expanded') !== 'true') pausaPerVoiceOver();
+                apriChiudiLista(tCapitoliBtn, tCapitoliLista);
+            });
+            tSegnaBtn.addEventListener('click', () => {
+                if (tSegnaBtn.getAttribute('aria-expanded') !== 'true') pausaPerVoiceOver();
+                apriChiudiLista(tSegnaBtn, tSegnaLista);
+            });
             document.getElementById('tattileFileInput').addEventListener('change', gestisciCaricamentoFile);
         }
 
