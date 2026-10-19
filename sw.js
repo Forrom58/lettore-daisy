@@ -3,7 +3,7 @@
 // - Per i file dell'app si prova prima la rete (così gli aggiornamenti arrivano subito),
 //   e se manca la connessione si usa la copia salvata.
 // Quando si pubblica una nuova versione, cambiare il numero qui sotto.
-const CACHE_NAME = 'daisy-offline-v6';
+const CACHE_NAME = 'daisy-offline-v7';
 
 const APP_FILES = [
     './',
@@ -12,8 +12,6 @@ const APP_FILES = [
     'icona_app_daisy.svg',
     'icon-192.png',
     'icon-512.png',
-    'icon-maskable-192.png',
-    'icon-maskable-512.png',
     'apple-touch-icon.png'
 ];
 
