@@ -1114,10 +1114,42 @@ function lastIndexAtOrBefore(list, t, key) {
             setWidth(bookProgressBar, (book.total > 0 ? Math.min(t / book.total * 100, 100) : 0).toFixed(2) + "%");
         }
 
+        // Passaggio al file successivo SENZA silenzio: il prossimo capitolo parte
+        // mezzo secondo prima che finisca quello in corso. Se l'audio si interrompe
+        // anche solo per un attimo a schermo spento, Android può bloccare la pagina.
+        function tryHandoff(el, seg) {
+            if (!useDual || !isPlaying) return false;
+            const n = segIdx + 1;
+            if (n >= book.segments.length) return false;
+            const nx = book.segments[n];
+            if (nx.src === seg.src) return false;
+            const other = players[1 - active];
+            if (other.dataset.src !== nx.src || other.readyState < 2) return false;
+            const fine = isFinite(el.duration) ? Math.min(seg.end, el.duration) : seg.end;
+            const restante = (fine - el.currentTime) / (el.playbackRate || 1);
+            if (restante > 0.5) return false;
+
+            const vecchio = el;
+            if (Math.abs(other.currentTime - nx.begin) > 0.3) other.currentTime = nx.begin;
+            other.defaultPlaybackRate = currentRate();
+            other.playbackRate = currentRate();
+            active = 1 - active;
+            segIdx = n;
+            safePlay();
+            const fermaVecchio = () => { if (vecchio !== P()) vecchio.pause(); };
+            P().addEventListener('playing', fermaVecchio, { once: true });
+            setTimeout(fermaVecchio, 1500);
+            syncChapterFromTime();
+            updateProgressUI();
+            prepareNext();
+            return true;
+        }
+
         function onTimeUpdate(e) {
             if (e.target !== P() || !book || switching) return;
             const el = P();
             const seg = book.segments[segIdx];
+            if (seg && tryHandoff(el, seg)) return;
             // Fine di uno spezzone che non coincide con la fine del file
             if (seg && el.currentTime >= seg.end - 0.05 && isFinite(el.duration) && seg.end < el.duration - 0.25) {
                 advance();
@@ -1161,6 +1193,24 @@ function lastIndexAtOrBefore(list, t, key) {
             el.addEventListener('play', onPlayEvent);
             el.addEventListener('error', onAudioError);
         }
+
+        // Controllo di sicurezza: se l'ascolto dovrebbe essere in corso ma l'audio
+        // è fermo o non avanza, lo sblocca da solo (come fare pausa e poi play).
+        let cgUltimoTempo = -1, cgFermo = 0;
+        setInterval(() => {
+            if (!book || !isPlaying || switching) { cgFermo = 0; cgUltimoTempo = -1; return; }
+            const el = P();
+            const fermo = el.paused || Math.abs(el.currentTime - cgUltimoTempo) < 0.01;
+            cgUltimoTempo = el.currentTime;
+            if (!fermo) { cgFermo = 0; return; }
+            cgFermo++;
+            if (cgFermo >= 2) {
+                cgFermo = 0;
+                console.warn('Controllo di sicurezza: audio fermo, lo faccio ripartire');
+                if (!el.paused) el.currentTime = el.currentTime; // sblocca un audio "incantato"
+                safePlay();
+            }
+        }, 2000);
 
         // Quando lo schermo si riaccende: se doveva suonare ma è fermo, riparte da solo
         document.addEventListener('visibilitychange', () => {
