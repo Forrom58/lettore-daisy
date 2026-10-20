@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="it" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="google" content="notranslate">
+<title>Prova VoiceOver</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { background: #000; }
+  body { color: #e2e8f0; font-family: system-ui, -apple-system, sans-serif; margin: 0 auto; padding: 16px; max-width: 480px; }
+  h1 { font-size: 1.4rem; color: #fbbf24; margin: 8px 0 4px; }
+  p { font-size: 1rem; line-height: 1.4; margin: 6px 0; }
+  button { display: block; width: 100%; min-height: 72px; margin: 10px 0; border: 0; border-radius: 14px; font-size: 1.25rem; font-weight: bold; }
+  .avvia { background: #fbbf24; color: #000; }
+  .controllo { background: #374151; color: #fff; }
+  .ferma { background: #131b26; color: #fff; border: 1px solid #4b5563; }
+  .avanti { background: #233040; color: #fbbf24; }
+</style>
+</head>
+<body>
+  <h1 id="titolo">Prova</h1>
+  <p id="spiega"></p>
+  <button class="avvia" id="bAvvia">Avvia</button>
+  <button class="controllo" id="bControllo">Tasto di controllo</button>
+  <button class="ferma" id="bFerma">Ferma</button>
+  <button class="avanti" id="bAvanti">Prova successiva</button>
+
+<script>
+const FILE = 'suono-prova.wav';
+const haSessione = 'audioSession' in navigator;
+
+// Prove: E = Web Audio, F = lettore normale passato nel motore Web Audio,
+// C/D = lettore normale con sessione audio dichiarata (se il telefono la supporta)
+const prove = [
+  { id: 'E', nome: 'Prova E: motore audio alternativo' },
+  { id: 'F', nome: 'Prova F: lettore normale dentro il motore alternativo' },
+];
+if (haSessione) {
+  prove.push({ id: 'C', nome: 'Prova C: sessione audio riproduzione' });
+  prove.push({ id: 'D', nome: 'Prova D: sessione audio misto' });
+}
+let corrente = 0;
+
+let ctx = null, sorgente = null, audio = null, nodoAudio = null;
+
+function mostra() {
+  const p = prove[corrente];
+  document.getElementById('titolo').textContent = p.nome + ' (' + (corrente + 1) + ' di ' + prove.length + ')';
+  document.getElementById('spiega').textContent =
+    'Attiva Avvia. Quando senti la melodia, scorri sul Tasto di controllo: VoiceOver lo legge per intero? Poi attiva Ferma e Prova successiva.' +
+    (haSessione ? '' : ' Su questo telefono la sessione audio non è supportata: le prove C e D non ci sono.');
+  document.getElementById('bAvvia').textContent = 'Avvia prova ' + p.id;
+  document.getElementById('bControllo').textContent = 'Tasto di controllo ' + p.id;
+  document.getElementById('bAvanti').textContent = corrente < prove.length - 1 ? 'Prova successiva' : 'Fine delle prove: ricomincia';
+}
+
+function ferma() {
+  if (sorgente) { try { sorgente.stop(); } catch (e) {} sorgente = null; }
+  if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); audio = null; }
+  if (nodoAudio) { try { nodoAudio.disconnect(); } catch (e) {} nodoAudio = null; }
+  if (haSessione) { try { navigator.audioSession.type = 'auto'; } catch (e) {} }
+}
+
+function contesto() {
+  if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+  return ctx;
+}
+
+async function avvia() {
+  ferma();
+  const id = prove[corrente].id;
+  try {
+    if (id === 'E') {
+      const c = contesto(); await c.resume();
+      const dati = await (await fetch(FILE)).arrayBuffer();
+      const buf = await c.decodeAudioData(dati);
+      sorgente = c.createBufferSource();
+      sorgente.buffer = buf; sorgente.loop = true;
+      sorgente.connect(c.destination);
+      sorgente.start();
+    } else if (id === 'F') {
+      const c = contesto(); await c.resume();
+      audio = new Audio(FILE); audio.loop = true;
+      nodoAudio = c.createMediaElementSource(audio);
+      nodoAudio.connect(c.destination);
+      await audio.play();
+    } else {
+      navigator.audioSession.type = (id === 'C') ? 'playback' : 'ambient';
+      audio = new Audio(FILE); audio.loop = true;
+      await audio.play();
+    }
+  } catch (e) {
+    document.getElementById('spiega').textContent = 'Errore: ' + e.message;
+  }
+}
+
+document.getElementById('bAvvia').addEventListener('click', avvia);
+document.getElementById('bFerma').addEventListener('click', ferma);
+document.getElementById('bAvanti').addEventListener('click', () => {
+  ferma();
+  corrente = (corrente + 1) % prove.length;
+  mostra();
+  document.getElementById('titolo').setAttribute('tabindex', '-1');
+  document.getElementById('titolo').focus();
+});
+mostra();
+</script>
+</body>
+</html>
