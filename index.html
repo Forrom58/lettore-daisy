@@ -215,7 +215,7 @@
                 <button id="tCapitoliBtn" aria-expanded="false" aria-controls="tCapitoliLista" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Elenco capitoli</button>
                 <div id="tCapitoliLista" class="hidden flex-col gap-2"></div>
 
-                <button id="tSegnaBtn" aria-expanded="false" aria-controls="tSegnaLista" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Segnalibri</button>
+                <button id="tSegnaBtn" aria-expanded="false" aria-controls="tSegnaLista" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Vai ai segnalibri</button>
                 <div id="tSegnaLista" class="hidden flex-col gap-2"></div>
 
                 <label id="tCaricaAltro" role="button" tabindex="0" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full flex items-center justify-center cursor-pointer border border-gray-700">
@@ -1189,7 +1189,16 @@ function lastIndexAtOrBefore(list, t, key) {
         }
 
         function onPlayEvent(e) {
-            if (e.target !== P()) return;
+            if (e.target !== P()) {
+                // iPhone: se il sistema fa ripartire il lettore "sbagliato" (non quello attivo),
+                // lo fermo e faccio suonare quello giusto. Il lettore "sbloccato" in silenzio non conta.
+                if (iosIbrido && !e.target.muted && !switching) {
+                    e.target.pause();
+                    if (!isPlaying) { isPlaying = true; updatePlayIcon(); }
+                    if (P().paused) safePlay();
+                }
+                return;
+            }
             if (!isPlaying) { isPlaying = true; updatePlayIcon(); }
         }
 
@@ -1324,9 +1333,14 @@ function lastIndexAtOrBefore(list, t, key) {
             if (!('mediaSession' in navigator)) return;
             const ms = navigator.mediaSession;
             const h = (action, fn) => { try { ms.setActionHandler(action, fn); } catch (e) {} };
-            h('play', () => { if (!isPlaying) resumePlayback(); });
-            h('pause', () => { if (isPlaying) pausePlayback(); });
-            h('stop', () => { if (isPlaying) pausePlayback(); });
+            // Su iPhone, con due lettori che si danno il cambio, play e pausa della schermata
+            // di blocco li gestisce iPhone direttamente sul lettore che sta suonando
+            // (come nella pagina di prova G, dove funzionavano). L'app se ne accorge dagli eventi.
+            if (!isIOS) {
+                h('play', () => { if (!isPlaying) resumePlayback(); });
+                h('pause', () => { if (isPlaying) pausePlayback(); });
+                h('stop', () => { if (isPlaying) pausePlayback(); });
+            }
             h('previoustrack', () => playChapter(currentChapterIndex - 1, isPlaying));
             h('nexttrack', () => playChapter(currentChapterIndex + 1, isPlaying));
             h('seekbackward', () => jumpTime(-15));
@@ -1680,13 +1694,22 @@ function lastIndexAtOrBefore(list, t, key) {
             setText(tStato, `Capitolo ${currentChapterIndex + 1} di ${book.chapters.length}: ${ch.title}`);
         }
 
+        function tastoChiudiElenco(btn, lista) {
+            const chiudi = document.createElement('button');
+            chiudi.className = 'bg-[#233040] rounded-xl text-base font-bold p-3 border border-gray-700';
+            chiudi.textContent = 'Chiudi elenco';
+            chiudi.addEventListener('click', () => { chiudiLista(btn, lista); btn.focus(); });
+            return chiudi;
+        }
+
         function renderTattileCapitoli() {
             tCapitoliLista.innerHTML = '';
             if (!book) return;
             book.chapters.forEach((ch, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'bg-[#131b26] rounded-xl text-left text-base p-3 border border-gray-700';
-                btn.textContent = `${i + 1}. ${ch.title}`;
+                btn.textContent = `Capitolo ${i + 1}: ${ch.title}`;
+                btn.dataset.indice = i;
                 btn.addEventListener('click', () => {
                     chiudiLista(tCapitoliBtn, tCapitoliLista);
                     playChapter(i, true);
@@ -1695,18 +1718,28 @@ function lastIndexAtOrBefore(list, t, key) {
                 });
                 tCapitoliLista.appendChild(btn);
             });
+            tCapitoliLista.appendChild(tastoChiudiElenco(tCapitoliBtn, tCapitoliLista));
+        }
+
+        // Segna nell'elenco quale capitolo è in ascolto (letto anche da VoiceOver)
+        function aggiornaCapitoloInElenco() {
+            for (const btn of tCapitoliLista.querySelectorAll('button[data-indice]')) {
+                const i = Number(btn.dataset.indice);
+                const testo = `Capitolo ${i + 1}: ${book.chapters[i].title}` + (i === currentChapterIndex ? ', in ascolto' : '');
+                setText(btn, testo);
+            }
         }
 
         function renderTattileSegnalibri() {
             if (!touchMode) return;
             tSegnaLista.innerHTML = '';
-            tSegnaBtn.textContent = bookmarks.length ? `Segnalibri: ${bookmarks.length}` : 'Segnalibri: nessuno';
+            setText(tSegnaBtn, bookmarks.length ? `Vai ai segnalibri: ${bookmarks.length}` : 'Vai ai segnalibri: nessuno');
             bookmarks.forEach((bm, i) => {
                 const riga = document.createElement('div');
                 riga.className = 'flex gap-2';
                 const vai = document.createElement('button');
                 vai.className = 'flex-1 bg-[#131b26] rounded-xl text-left text-base p-3 border border-gray-700';
-                vai.textContent = `Segnalibro ${i + 1}: capitolo ${bm.chapterIndex + 1}, ${bm.chapterTitle}, ${formatTimeVoce(bm.time)}`;
+                vai.textContent = `Ascolta segnalibro ${i + 1}: capitolo ${bm.chapterIndex + 1}, ${bm.chapterTitle}, ${formatTimeVoce(bm.time)}`;
                 vai.addEventListener('click', () => {
                     chiudiLista(tSegnaBtn, tSegnaLista);
                     goToBookmark(i);
@@ -1718,19 +1751,26 @@ function lastIndexAtOrBefore(list, t, key) {
                 del.setAttribute('aria-label', `Elimina segnalibro ${i + 1}`);
                 del.addEventListener('click', () => {
                     deleteBookmark(i);
-                    annuncia(`Segnalibro ${i + 1} eliminato.`);
-                    tSegnaBtn.focus();
+                    if (!bookmarks.length) chiudiLista(tSegnaBtn, tSegnaLista);
+                    rispostaInAlto(`Segnalibro ${i + 1} eliminato.`);
                 });
                 riga.append(vai, del);
                 tSegnaLista.appendChild(riga);
             });
+            if (bookmarks.length) tSegnaLista.appendChild(tastoChiudiElenco(tSegnaBtn, tSegnaLista));
         }
 
-        function apriChiudiLista(btn, lista) {
+        // Apre o chiude un elenco. Quando si apre, il cursore di VoiceOver
+        // viene portato dentro l'elenco, sulla voce indicata.
+        function apriChiudiLista(btn, lista, voceIniziale) {
             const aperta = btn.getAttribute('aria-expanded') === 'true';
             btn.setAttribute('aria-expanded', aperta ? 'false' : 'true');
             lista.classList.toggle('hidden', aperta);
             lista.classList.toggle('flex', !aperta);
+            if (!aperta && voceIniziale) {
+                voceIniziale.scrollIntoView({ block: 'center' });
+                voceIniziale.focus();
+            }
         }
         function chiudiLista(btn, lista) {
             btn.setAttribute('aria-expanded', 'false');
@@ -1791,7 +1831,7 @@ function lastIndexAtOrBefore(list, t, key) {
                 const nota = pausaPerVoiceOver();
                 addBookmarkBtn.click();
                 const bm = bookmarks[bookmarks.length - 1];
-                rispostaInAlto(`Segnalibro ${bookmarks.length} aggiunto: capitolo ${bm.chapterIndex + 1}, ${formatTimeVoce(bm.time)}.` + nota);
+                rispostaInAlto(`Segnalibro ${bookmarks.length} aggiunto: capitolo ${bm.chapterIndex + 1}, ${formatTimeVoce(bm.time)}. Per tornarci usa il tasto Vai ai segnalibri.` + nota);
             });
             tStato.addEventListener('blur', () => { statoBloccato = false; aggiornaStatoTattile(); });
             // Qualsiasi altro tasto riporta la riga in alto a mostrare il capitolo
@@ -1805,12 +1845,19 @@ function lastIndexAtOrBefore(list, t, key) {
                 annuncia(testoVelocita());
             });
             tCapitoliBtn.addEventListener('click', () => {
+                if (!book) { rispostaInAlto('Nessun libro caricato.'); return; }
                 if (tCapitoliBtn.getAttribute('aria-expanded') !== 'true') pausaPerVoiceOver();
-                apriChiudiLista(tCapitoliBtn, tCapitoliLista);
+                aggiornaCapitoloInElenco();
+                apriChiudiLista(tCapitoliBtn, tCapitoliLista,
+                    tCapitoliLista.querySelector(`button[data-indice="${currentChapterIndex}"]`));
             });
             tSegnaBtn.addEventListener('click', () => {
+                if (!bookmarks.length) {
+                    rispostaInAlto('Non hai ancora nessun segnalibro. Usa il tasto Aggiungi segnalibro.');
+                    return;
+                }
                 if (tSegnaBtn.getAttribute('aria-expanded') !== 'true') pausaPerVoiceOver();
-                apriChiudiLista(tSegnaBtn, tSegnaLista);
+                apriChiudiLista(tSegnaBtn, tSegnaLista, tSegnaLista.querySelector('button'));
             });
             document.getElementById('tattileFileInput').addEventListener('change', gestisciCaricamentoFile);
         }
