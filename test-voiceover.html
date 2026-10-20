@@ -33,6 +33,7 @@ const haSessione = 'audioSession' in navigator;
 // Prove: E = Web Audio, F = lettore normale passato nel motore Web Audio,
 // C/D = lettore normale con sessione audio dichiarata (se il telefono la supporta)
 const prove = [
+  { id: 'G', nome: 'Prova G: cambio automatico quando si blocca lo schermo' },
   { id: 'E', nome: 'Prova E: motore audio alternativo' },
   { id: 'F', nome: 'Prova F: lettore normale dentro il motore alternativo' },
 ];
@@ -48,14 +49,68 @@ function mostra() {
   const p = prove[corrente];
   document.getElementById('titolo').textContent = p.nome + ' (' + (corrente + 1) + ' di ' + prove.length + ')';
   document.getElementById('spiega').textContent =
-    'Attiva Avvia. Quando senti la melodia, scorri sul Tasto di controllo: VoiceOver lo legge per intero? Poi attiva Ferma e Prova successiva.' +
+    (p.id === 'G'
+      ? 'Attiva Avvia. Controlla che VoiceOver legga il Tasto di controllo. Poi blocca il telefono per un minuto: la melodia continua? Riaccendi: VoiceOver legge ancora il Tasto di controllo?'
+      : 'Attiva Avvia. Quando senti la melodia, scorri sul Tasto di controllo: VoiceOver lo legge per intero? Poi attiva Ferma e Prova successiva.') +
     (haSessione ? '' : ' Su questo telefono la sessione audio non è supportata: le prove C e D non ci sono.');
   document.getElementById('bAvvia').textContent = 'Avvia prova ' + p.id;
   document.getElementById('bControllo').textContent = 'Tasto di controllo ' + p.id;
   document.getElementById('bAvanti').textContent = corrente < prove.length - 1 ? 'Prova successiva' : 'Fine delle prove: ricomincia';
 }
 
+// --- Prova G: due lettori. "instradato" passa nel motore alternativo (VoiceOver parla),
+// "normale" è il lettore classico che continua a schermo bloccato.
+let gInstradato = null, gNormale = null, gNodo = null, gAttiva = false;
+
+// file in memoria, come fa l'app con i capitoli del libro (preparato subito all'apertura,
+// così il tocco su Avvia fa partire l'audio senza attese)
+let gUrl = FILE;
+fetch(FILE).then(r => r.blob()).then(b => { gUrl = URL.createObjectURL(b); }).catch(() => {});
+async function gPrepara() {
+  if (gInstradato) return;
+  const c = contesto();
+  gInstradato = new Audio(gUrl); gInstradato.loop = true;
+  gNodo = c.createMediaElementSource(gInstradato);
+  gNodo.connect(c.destination);
+  gNormale = new Audio(gUrl); gNormale.loop = true;
+}
+
+async function gAvvia() {
+  await gPrepara();
+  const c = contesto(); await c.resume();
+  // "sblocco" del lettore normale durante il tocco, così potrà partire dopo
+  gNormale.muted = true;
+  try { await gNormale.play(); } catch (e) {}
+  gNormale.pause(); gNormale.muted = false;
+  gInstradato.currentTime = 0;
+  await gInstradato.play();
+  gAttiva = true;
+}
+
+function gVersoNormale() {
+  if (!gAttiva || gInstradato.paused) return;
+  gNormale.currentTime = gInstradato.currentTime;
+  const pr = gNormale.play();
+  gInstradato.pause();
+  if (pr && pr.catch) pr.catch(() => {});
+}
+
+async function gVersoInstradato() {
+  if (!gAttiva || gNormale.paused) return;
+  try { await contesto().resume(); } catch (e) {}
+  gInstradato.currentTime = gNormale.currentTime;
+  try { await gInstradato.play(); gNormale.pause(); } catch (e) {}
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') gVersoNormale(); else gVersoInstradato();
+});
+window.addEventListener('pagehide', gVersoNormale);
+
 function ferma() {
+  gAttiva = false;
+  if (gInstradato) gInstradato.pause();
+  if (gNormale) gNormale.pause();
   if (sorgente) { try { sorgente.stop(); } catch (e) {} sorgente = null; }
   if (audio) { audio.pause(); audio.removeAttribute('src'); audio.load(); audio = null; }
   if (nodoAudio) { try { nodoAudio.disconnect(); } catch (e) {} nodoAudio = null; }
@@ -71,7 +126,9 @@ async function avvia() {
   ferma();
   const id = prove[corrente].id;
   try {
-    if (id === 'E') {
+    if (id === 'G') {
+      await gAvvia();
+    } else if (id === 'E') {
       const c = contesto(); await c.resume();
       const dati = await (await fetch(FILE)).arrayBuffer();
       const buf = await c.decodeAudioData(dati);
