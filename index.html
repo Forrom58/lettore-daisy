@@ -210,13 +210,13 @@
                 </div>
                 <button id="tDove" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Dove sono?</button>
                 <button id="tSegna" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Aggiungi segnalibro</button>
-                <button id="tVel" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Velocità 1</button>
+                <button id="tSegnaBtn" aria-expanded="false" aria-controls="tSegnaLista" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Vai ai segnalibri</button>
+                <div id="tSegnaLista" class="hidden flex-col gap-2"></div>
 
                 <button id="tCapitoliBtn" aria-expanded="false" aria-controls="tCapitoliLista" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Elenco capitoli</button>
                 <div id="tCapitoliLista" class="hidden flex-col gap-2"></div>
 
-                <button id="tSegnaBtn" aria-expanded="false" aria-controls="tSegnaLista" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Vai ai segnalibri</button>
-                <div id="tSegnaLista" class="hidden flex-col gap-2"></div>
+                <button id="tVel" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Velocità 1</button>
 
                 <label id="tCaricaAltro" role="button" tabindex="0" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full flex items-center justify-center cursor-pointer border border-gray-700">
                     Carica un altro libro
@@ -825,7 +825,7 @@ function lastIndexAtOrBefore(list, t, key) {
                 playBtn.setAttribute('aria-label', 'Play');
             }
             aggiornaTattilePlay();
-            if ('mediaSession' in navigator) {
+            if ('mediaSession' in navigator && !isIOS) {
                 try { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; } catch (e) {}
             }
         }
@@ -1253,10 +1253,24 @@ function lastIndexAtOrBefore(list, t, key) {
         function passaA(idx) {
             if (!iosIbrido || active === idx || switching) return;
             const da = P(), a = players[idx];
-            if (!da.dataset.src || a.dataset.src !== da.dataset.src || a.readyState < 1) return;
+            if (!da.dataset.src || a.dataset.src !== da.dataset.src) return;
+            const posizione = da.currentTime;
+            const t0 = performance.now();
+            const stavaSuonando = isPlaying;
             a.defaultPlaybackRate = currentRate();
             a.playbackRate = currentRate();
-            try { a.currentTime = da.currentTime; } catch (e) {}
+            try { a.currentTime = posizione; } catch (e) {}
+            // iPhone a volte ignora lo spostamento su un lettore non ancora avviato:
+            // appena il lettore è pronto o parte, controllo la posizione e la correggo.
+            const giusta = () => posizione + (stavaSuonando ? (performance.now() - t0) / 1000 * currentRate() : 0);
+            const correggi = () => {
+                if (a !== P()) return;
+                const g = giusta();
+                if (Math.abs(a.currentTime - g) > 1) { try { a.currentTime = g; } catch (e) {} }
+            };
+            a.addEventListener('loadedmetadata', correggi, { once: true });
+            a.addEventListener('playing', correggi, { once: true });
+            setTimeout(correggi, 800);
             active = idx;          // prima cambio il lettore attivo, così la pausa del vecchio viene ignorata
             if (isPlaying) safePlay();
             da.pause();
@@ -1330,7 +1344,9 @@ function lastIndexAtOrBefore(list, t, key) {
 
         // --- COMANDI DA SCHERMATA DI BLOCCO, NOTIFICA E CUFFIE ---
         function setupMediaSession() {
-            if (!('mediaSession' in navigator)) return;
+            // Su iPhone niente collegamento con la schermata di blocco: come nella pagina
+            // di prova G, dove play e pausa della schermata di blocco funzionavano.
+            if (!('mediaSession' in navigator) || isIOS) return;
             const ms = navigator.mediaSession;
             const h = (action, fn) => { try { ms.setActionHandler(action, fn); } catch (e) {} };
             // Su iPhone, con due lettori che si danno il cambio, play e pausa della schermata
@@ -1350,7 +1366,7 @@ function lastIndexAtOrBefore(list, t, key) {
 
         let lastMetaKey = '';
         function updateMediaMetadata() {
-            if (!('mediaSession' in navigator) || !book || typeof MediaMetadata === 'undefined') return;
+            if (!('mediaSession' in navigator) || isIOS || !book || typeof MediaMetadata === 'undefined') return;
             const ch = book.chapters[currentChapterIndex];
             const key = book.title + '|' + currentChapterIndex;
             if (key === lastMetaKey) return;
