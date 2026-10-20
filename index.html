@@ -226,7 +226,7 @@
 
             <div class="mt-4 bg-[#131b26] p-4 rounded-xl border border-gray-800">
                 <h3 class="text-sm text-gray-300 font-bold mb-2">Come funziona</h3>
-                <p class="text-sm text-gray-300 leading-relaxed">Carica un libro DAISY in formato zip. Poi usa i tasti: Play, capitolo precedente e successivo, salti di 15 e 30 secondi. Il tasto "Dove sono?" legge capitolo e tempo. Su iPhone, mentre il libro suona, VoiceOver non riesce a leggere: per esplorare i tasti metti prima in pausa con il primo tasto. "Dove sono?", "Aggiungi segnalibro", "Elenco capitoli" e "Segnalibri" mettono in pausa da soli; per riprendere premi Play. Con lo schermo bloccato, l'ascolto continua e si controlla dalla schermata di blocco.</p>
+                <p class="text-sm text-gray-300 leading-relaxed">Carica un libro DAISY in formato zip. Poi usa i tasti: Play, capitolo precedente e successivo, salti di 15 e 30 secondi. Il tasto "Dove sono?" legge capitolo e tempo. Su iPhone, con lo schermo acceso, VoiceOver legge i tasti anche mentre il libro suona. Se in qualche caso non ci riesce, metti in pausa con il primo tasto. Con lo schermo bloccato, l'ascolto continua e si controlla dalla schermata di blocco.</p>
             </div>
         </div>
 
@@ -980,6 +980,13 @@ function lastIndexAtOrBefore(list, t, key) {
                         el.dataset.src = seg.src;
                         el.defaultPlaybackRate = currentRate();
                         el.playbackRate = currentRate();
+                        if (iosIbrido) {
+                            // su iPhone anche il lettore "gemello" carica lo stesso capitolo
+                            const gemello = players[1 - active];
+                            gemello.pause();
+                            gemello.src = url;
+                            gemello.dataset.src = seg.src;
+                        }
                         await waitMetadata(el);
                         if (tok !== loadToken) return;
                         el.currentTime = target;
@@ -1168,6 +1175,12 @@ function lastIndexAtOrBefore(list, t, key) {
         // Pausa decisa dal sistema (telefonata, altra app, cuffie staccate)
         function onPauseEvent(e) {
             if (e.target !== P() || switching || P().ended) return;
+            // iPhone: quando lo schermo si blocca il motore alternativo si ferma da solo.
+            // Non è una pausa dell'utente: si passa al lettore normale e l'ascolto continua.
+            if (iosIbrido && isPlaying && active === INSTRADATO && (document.visibilityState === 'hidden' || !ctxPronto())) {
+                passaA(NORMALE);
+                return;
+            }
             if (isPlaying) {
                 isPlaying = false;
                 updatePlayIcon();
@@ -1212,15 +1225,78 @@ function lastIndexAtOrBefore(list, t, key) {
             }
         }, 2000);
 
+        // ================================================================
+        // iPHONE: CAMBIO AUTOMATICO DEL LETTORE
+        // Su iPhone, mentre il lettore audio normale suona, VoiceOver viene zittito.
+        // Se l'audio passa nel "motore alternativo" (Web Audio) VoiceOver parla, ma
+        // quel motore si ferma a schermo bloccato. Quindi:
+        //  - schermo acceso  -> lettore 0, collegato al motore alternativo (VoiceOver parla)
+        //  - schermo bloccato -> lettore 1, normale (l'ascolto continua)
+        // I due lettori hanno sempre caricato lo stesso capitolo.
+        // ================================================================
+        const ACtx = window.AudioContext || window.webkitAudioContext;
+        const iosIbrido = isIOS && !!ACtx;
+        const INSTRADATO = 0, NORMALE = 1;
+        let actx = null;
+
+        function ctxPronto() { return !!actx && actx.state === 'running'; }
+
+        function passaA(idx) {
+            if (!iosIbrido || active === idx || switching) return;
+            const da = P(), a = players[idx];
+            if (!da.dataset.src || a.dataset.src !== da.dataset.src || a.readyState < 1) return;
+            a.defaultPlaybackRate = currentRate();
+            a.playbackRate = currentRate();
+            try { a.currentTime = da.currentTime; } catch (e) {}
+            active = idx;          // prima cambio il lettore attivo, così la pausa del vecchio viene ignorata
+            if (isPlaying) safePlay();
+            da.pause();
+        }
+
+        function scegliLettore() {
+            if (!iosIbrido || !book) return;
+            const acceso = document.visibilityState === 'visible';
+            passaA(acceso && ctxPronto() ? INSTRADATO : NORMALE);
+        }
+
+        // Va eseguito durante un tocco dell'utente: iPhone permette di avviare l'audio solo così
+        function preparaIbrido() {
+            if (!iosIbrido) return;
+            try {
+                if (!actx) {
+                    actx = new ACtx();
+                    actx.createMediaElementSource(players[INSTRADATO]).connect(actx.destination);
+                    actx.onstatechange = scegliLettore;
+                }
+                if (actx.state !== 'running') actx.resume().then(scegliLettore).catch(() => {});
+                // finché il motore alternativo non è pronto si usa il lettore normale (altrimenti non si sentirebbe nulla)
+                if (!ctxPronto()) passaA(NORMALE); else scegliLettore();
+                // "sblocco" del lettore che non sta suonando, così potrà partire più tardi da solo
+                const altro = players[1 - active];
+                if (altro.paused && altro.dataset.src) {
+                    altro.muted = true;
+                    const pr = altro.play();
+                    const fine = () => { if (altro !== P()) altro.pause(); altro.muted = false; };
+                    if (pr && pr.then) pr.then(fine, fine); else fine();
+                }
+            } catch (e) {
+                console.warn('Motore audio alternativo non disponibile:', e);
+            }
+        }
+        if (iosIbrido) document.addEventListener('click', preparaIbrido, true);
+
         // Quando lo schermo si riaccende: se doveva suonare ma è fermo, riparte da solo
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
+                if (iosIbrido && actx && actx.state !== 'running') actx.resume().then(scegliLettore).catch(() => {});
+                scegliLettore();
                 if (book && isPlaying && P().paused && !switching) safePlay();
             } else {
+                scegliLettore();   // su iPhone passa al lettore normale prima che lo schermo si spenga
                 saveLastPosition(true);
             }
         });
-        window.addEventListener('pagehide', () => saveLastPosition(true));
+        window.addEventListener('pagehide', () => { if (iosIbrido) passaA(NORMALE); saveLastPosition(true); });
 
         function pausePlayback() {
             isPlaying = false;
@@ -1700,6 +1776,8 @@ function lastIndexAtOrBefore(list, t, key) {
             // i tasti che rispondono a voce mettono prima in pausa il libro.
             const pausaPerVoiceOver = () => {
                 if (!isPlaying) return '';
+                // con il motore alternativo attivo VoiceOver parla anche durante l'ascolto: niente pausa
+                if (iosIbrido && active === INSTRADATO && ctxPronto()) return '';
                 pausePlayback();
                 return ' Libro in pausa, premi Play per riprendere.';
             };
