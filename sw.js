@@ -3,7 +3,7 @@
 // - Per i file dell'app si prova prima la rete (così gli aggiornamenti arrivano subito),
 //   e se manca la connessione si usa la copia salvata.
 // Quando si pubblica una nuova versione, cambiare il numero qui sotto.
-const CACHE_NAME = 'daisy-offline-v13';
+const CACHE_NAME = 'daisy-offline-v14';
 
 const APP_FILES = [
     './',
