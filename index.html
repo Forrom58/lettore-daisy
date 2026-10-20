@@ -26,6 +26,7 @@
             .bg-yellow-brand { background-color: #fbbf24; color: #000000; }
             .bg-salmon-brand { background-color: #f87171; color: #000000; }
             .text-yellow-brand { color: #fbbf24; }
+            .elenco-scorri { padding: 8px 22% 8px 8px; border-radius: 14px; background: linear-gradient(to left, #2d3a4b 0, #2d3a4b 18%, transparent 18%); }
             .solo-lettore { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
         </style>
     </head>
@@ -211,10 +212,10 @@
                 <button id="tDove" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Dove sono?</button>
                 <button id="tSegna" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Aggiungi segnalibro</button>
                 <button id="tSegnaBtn" aria-expanded="false" aria-controls="tSegnaLista" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Vai ai segnalibri</button>
-                <div id="tSegnaLista" class="hidden flex-col gap-2"></div>
+                <div id="tSegnaLista" class="hidden flex-col gap-2 elenco-scorri"></div>
 
                 <button id="tCapitoliBtn" aria-expanded="false" aria-controls="tCapitoliLista" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Elenco capitoli</button>
-                <div id="tCapitoliLista" class="hidden flex-col gap-2"></div>
+                <div id="tCapitoliLista" class="hidden flex-col gap-2 elenco-scorri"></div>
 
                 <button id="tVel" class="bg-[#233040] rounded-2xl font-bold text-lg min-h-[70px] w-full">Velocità 1</button>
 
@@ -1721,6 +1722,7 @@ function lastIndexAtOrBefore(list, t, key) {
         function renderTattileCapitoli() {
             tCapitoliLista.innerHTML = '';
             if (!book) return;
+            tCapitoliLista.appendChild(tastoChiudiElenco(tCapitoliBtn, tCapitoliLista));
             book.chapters.forEach((ch, i) => {
                 const btn = document.createElement('button');
                 btn.className = 'bg-[#131b26] rounded-xl text-left text-base p-3 border border-gray-700';
@@ -1750,11 +1752,13 @@ function lastIndexAtOrBefore(list, t, key) {
             if (!touchMode) return;
             tSegnaLista.innerHTML = '';
             setText(tSegnaBtn, bookmarks.length ? `Vai ai segnalibri: ${bookmarks.length}` : 'Vai ai segnalibri: nessuno');
+            if (bookmarks.length) tSegnaLista.appendChild(tastoChiudiElenco(tSegnaBtn, tSegnaLista));
             bookmarks.forEach((bm, i) => {
                 const riga = document.createElement('div');
                 riga.className = 'flex gap-2';
                 const vai = document.createElement('button');
                 vai.className = 'flex-1 bg-[#131b26] rounded-xl text-left text-base p-3 border border-gray-700';
+                vai.dataset.segnalibro = i;
                 vai.textContent = `Ascolta segnalibro ${i + 1}: capitolo ${bm.chapterIndex + 1}, ${bm.chapterTitle}, ${formatTimeVoce(bm.time)}`;
                 vai.addEventListener('click', () => {
                     chiudiLista(tSegnaBtn, tSegnaLista);
@@ -1873,7 +1877,7 @@ function lastIndexAtOrBefore(list, t, key) {
                     return;
                 }
                 if (tSegnaBtn.getAttribute('aria-expanded') !== 'true') pausaPerVoiceOver();
-                apriChiudiLista(tSegnaBtn, tSegnaLista, tSegnaLista.querySelector('button'));
+                apriChiudiLista(tSegnaBtn, tSegnaLista, tSegnaLista.querySelector('button[data-segnalibro]'));
             });
             document.getElementById('tattileFileInput').addEventListener('change', gestisciCaricamentoFile);
         }
