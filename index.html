@@ -26,6 +26,11 @@
             .bg-yellow-brand { background-color: #fbbf24; color: #000000; }
             .bg-salmon-brand { background-color: #f87171; color: #000000; }
             .text-yellow-brand { color: #fbbf24; }
+            .fine-schermo { background: #000; color: #fff; }
+            .fine-scritta { font-family: Georgia, 'Times New Roman', serif; font-size: 6.5rem; line-height: 1; letter-spacing: 0.2em; color: #fbbf24; }
+            #fineModal:not(.hidden) .fine-schermo { animation: dissolvenza 1.6s ease-out; }
+            @keyframes dissolvenza { from { opacity: 0; } to { opacity: 1; } }
+            @media (prefers-reduced-motion: reduce) { #fineModal:not(.hidden) .fine-schermo { animation: none; } }
             .elenco-scorri { padding: 8px 22% 8px 8px; border-radius: 14px; background: linear-gradient(to left, #2d3a4b 0, #2d3a4b 18%, transparent 18%); }
             .solo-lettore { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
         </style>
@@ -249,6 +254,15 @@
         <button onclick="window.apriMenuInterfaccia()" class="w-full mt-6 py-3 text-base text-white underline text-center">Cambia interfaccia</button>
     </div>
 
+
+    <!-- FINE DEL LIBRO: grande scritta a tutto schermo; toccandola si sceglie il libro successivo -->
+    <div id="fineModal" class="fixed inset-0 z-[70] hidden" role="dialog" aria-modal="true" aria-labelledby="fineBtn">
+        <button id="fineBtn" class="fine-schermo w-full h-full flex flex-col items-center justify-center gap-6 px-6 text-center">
+            <span class="fine-scritta">FINE</span>
+            <span id="fineTesto" class="text-xl text-gray-200 leading-relaxed"></span>
+            <span class="text-lg text-yellow-brand font-bold">Tocca per caricare un altro libro</span>
+        </button>
+    </div>
 
     <!-- DOMANDA: libro già iniziato (compare solo aprendo un libro diverso da quello corrente) -->
     <div id="riprendiModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] hidden" role="dialog" aria-modal="true" aria-labelledby="riprendiTitolo" aria-describedby="riprendiTesto">
@@ -1058,10 +1072,7 @@ function lastIndexAtOrBefore(list, t, key) {
             if (!book || switching) return;
             const n = segIdx + 1;
             if (n >= book.segments.length) {
-                isPlaying = false;
-                updatePlayIcon();
-                saveLastPosition(true);
-                if (isBlindMode) parla("Fine del libro.");
+                libroFinito();
                 return;
             }
             const cur = book.segments[segIdx];
@@ -1671,12 +1682,20 @@ function lastIndexAtOrBefore(list, t, key) {
 
         // Domanda "continua o da capo?": compare solo aprendo un libro diverso da quello corrente
         function chiediRipresa(capitolo, titoloCap, tempo) {
+            return chiediConferma('Libro già iniziato',
+                `Eri arrivato al capitolo ${capitolo}: ${titoloCap}, ${tempo}. Vuoi continuare da lì o ricominciare da capo?`,
+                'Continua da lì', 'Ricomincia da capo');
+        }
+
+        function chiediConferma(titolo, frase, testoSi, testoNo) {
             return new Promise((resolve) => {
                 const modal = document.getElementById('riprendiModal');
                 const testo = document.getElementById('riprendiTesto');
                 const bSi = document.getElementById('riprendiContinua');
                 const bNo = document.getElementById('riprendiDaCapo');
-                const frase = `Eri arrivato al capitolo ${capitolo}: ${titoloCap}, ${tempo}. Vuoi continuare da lì o ricominciare da capo?`;
+                document.getElementById('riprendiTitolo').textContent = titolo;
+                bSi.textContent = testoSi;
+                bNo.textContent = testoNo;
                 testo.textContent = frase;
                 modal.classList.remove('hidden');
                 // il cursore di VoiceOver va sulla domanda, poi si scorre ai due tasti
@@ -1696,6 +1715,82 @@ function lastIndexAtOrBefore(list, t, key) {
         }
 
         let chiaveCorrente = null;   // libro che si sta leggendo ora
+
+        // ================================================================
+        // FINE DEL LIBRO
+        // ================================================================
+        function chiaveLetto(chiaveLibro) { return 'daisy_letto_' + chiaveLibro; }
+        function dataInParole(iso) {
+            try { return new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' }); }
+            catch (e) { return ''; }
+        }
+
+        async function rimuoviLibroDaMemoria() {
+            try { localStorage.removeItem(CHIAVE_LIBRO); } catch (e) {}
+            copiaToken++;   // se una copia era in corso, viene abbandonata
+            if (!memoriaDisponibile()) return;
+            try {
+                const cartella = await navigator.storage.getDirectory();
+                const nomi = [];
+                for await (const [n] of cartella.entries()) if (n.startsWith('libro-')) nomi.push(n);
+                for (const n of nomi) await cartella.removeEntry(n).catch(() => {});
+            } catch (e) { console.warn('Pulizia della memoria non riuscita:', e); }
+        }
+
+        // Il libro è finito: lo segno come letto, azzero la posizione, lo tolgo dalla
+        // memoria dell'app e mostro la grande scritta FINE.
+        function libroFinito() {
+            if (!book) return;
+            const titolo = book.title;
+            const chiaveLibro = bookKey();
+            isPlaying = false;
+            playToken++;
+            for (const el of players) el.pause();
+            updatePlayIcon();
+            lsSet(chiaveLetto(chiaveLibro), new Date().toISOString());
+            try { localStorage.removeItem('daisy_progress_' + chiaveLibro); } catch (e) {}
+            book = null;            // da qui in poi nessuna posizione viene più salvata
+            chiaveCorrente = null;
+            rimuoviLibroDaMemoria();
+            mostraFine(titolo);
+        }
+
+        function mostraFine(titolo) {
+            const frase = `Hai finito «${titolo}».`;
+            document.getElementById('fineTesto').textContent = frase;
+            const btn = document.getElementById('fineBtn');
+            btn.setAttribute('aria-label', `Fine. Hai finito ${titolo}. Tocca per caricare un altro libro.`);
+            document.getElementById('fineModal').classList.remove('hidden');
+            setTimeout(() => btn.focus(), 50);
+            if (isBlindMode && !touchMode) parla(`Fine. Hai finito ${titolo}. Tocca lo schermo per caricare un altro libro.`);
+        }
+
+        // Riporta l'app allo stato iniziale, senza libro
+        function svuotaApp() {
+            clearAudio();
+            book = null;
+            bookmarks = [];
+            bookmarksList.innerHTML = '';
+            mostraTitolo('Nessun libro caricato');
+            chapterInfoSection.classList.add('hidden');
+            bookTimeCurrent.textContent = '0:00:00';
+            bookTimeTotal.textContent = '0:00:00';
+            bookProgressBar.style.width = '0%';
+            uploadLabel.querySelector('h3').textContent = 'Carica un libro';
+            blindUploadLabel.querySelector('span').textContent = 'Carica un libro';
+            blindUploadLabel.classList.remove('hidden');
+            if (touchMode) {
+                tComandi.classList.replace('flex', 'hidden');
+                setText(tStato, 'Carica un libro per iniziare.');
+            }
+        }
+
+        document.getElementById('fineBtn').addEventListener('click', () => {
+            document.getElementById('fineModal').classList.add('hidden');
+            svuotaApp();
+            // si apre subito la scelta del file per il libro successivo
+            (isBlindMode ? blindFileInput : fileInput).click();
+        });
 
         async function gestisciCaricamentoFile(event) {
             const file = event.target.files[0];
@@ -1772,7 +1867,33 @@ function lastIndexAtOrBefore(list, t, key) {
             segIdx = 0;
             let startT = 0;
             let daCapo = false;
-            const lastT = getLastPosition();
+            let lastT = getLastPosition();
+            // Posizione salvata proprio alla fine (versioni precedenti): il libro era finito
+            if (lastT !== null && lastT >= book.total - 3) {
+                if (!lsGet(chiaveLetto(bookKey()))) lsSet(chiaveLetto(bookKey()), new Date().toISOString());
+                try { localStorage.removeItem('daisy_progress_' + bookKey()); } catch (e) {}
+                lastT = null;
+                if (daMemoria) {
+                    // riaprendo l'app con un libro finito: grande scritta FINE
+                    const titolo = book.title;
+                    book = null; chiaveCorrente = null;
+                    rimuoviLibroDaMemoria();
+                    mostraFine(titolo);
+                    return 'finito';
+                }
+            }
+            const lettoIl = lsGet(chiaveLetto(bookKey()));
+            if (chiedi && lettoIl && (lastT === null || lastT <= 1)) {
+                const riascolta = await chiediConferma('Libro già letto',
+                    `Hai già letto questo libro il ${dataInParole(lettoIl)}. Vuoi riascoltarlo dall'inizio?`,
+                    "Riascolta dall'inizio", 'Carica un altro libro');
+                if (!riascolta) {
+                    svuotaApp();
+                    chiaveCorrente = null;
+                    (isBlindMode ? blindFileInput : fileInput).click();
+                    return false;
+                }
+            }
             if (lastT !== null && lastT > 1) {
                 startT = Math.min(lastT, book.total - 0.5);
                 currentChapterIndex = lastIndexAtOrBefore(book.chapters, startT, 't');
