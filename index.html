@@ -231,7 +231,6 @@
             </div>
         </div>
 
-        <!-- Annunci per VoiceOver (invisibili) -->
 
         <!-- TASTONE VOCALE -->
         <button id="blindBtnParla" class="bg-yellow-brand text-[#000000] flex-1 min-h-[250px] rounded-3xl font-bold text-3xl shadow-2xl border-4 border-yellow-brand flex flex-col items-center justify-center gap-4 transition-all active:scale-95">
@@ -250,14 +249,15 @@
         <button onclick="window.apriMenuInterfaccia()" class="w-full mt-6 py-3 text-base text-white underline text-center">Cambia interfaccia</button>
     </div>
 
-    <!-- MODAL RIPRENDI ASCOLTO -->
-    <div id="resumeModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] hidden" role="dialog" aria-modal="true" aria-labelledby="resumeModalTitle">
+
+    <!-- DOMANDA: libro già iniziato (compare solo aprendo un libro diverso da quello corrente) -->
+    <div id="riprendiModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] hidden" role="dialog" aria-modal="true" aria-labelledby="riprendiTitolo" aria-describedby="riprendiTesto">
         <div class="bg-[#233040] p-6 rounded-2xl max-w-sm w-full mx-4 border border-gray-700 shadow-2xl">
-            <h3 id="resumeModalTitle" class="text-xl font-bold text-white mb-2">Ascolto precedente</h3>
-            <p id="resumeModalText" class="text-gray-300 mb-6 text-sm">Trovato un ascolto precedente per questo libro. Vuoi riprendere?</p>
-            <div class="flex gap-4">
-                <button id="resumeModalNo" class="flex-1 py-3 rounded-xl bg-[#131b26] text-white font-bold hover:bg-gray-800 transition-colors">No</button>
-                <button id="resumeModalYes" class="flex-1 py-3 rounded-xl bg-yellow-brand text-[#131b26] font-bold hover:opacity-90 transition-opacity">Sì</button>
+            <h3 id="riprendiTitolo" class="text-xl font-bold text-white mb-2">Libro già iniziato</h3>
+            <p id="riprendiTesto" tabindex="-1" class="text-gray-200 mb-6 text-base"></p>
+            <div class="flex flex-col gap-3">
+                <button id="riprendiContinua" class="w-full py-4 rounded-xl bg-yellow-brand text-[#131b26] font-bold text-lg">Continua da lì</button>
+                <button id="riprendiDaCapo" class="w-full py-4 rounded-xl bg-[#131b26] text-white font-bold text-lg border border-gray-600">Ricomincia da capo</button>
             </div>
         </div>
     </div>
@@ -554,14 +554,29 @@ async function buildBook(zip, onProgress) {
     const missingAudio = new Set();
     let t = 0;
 
+    // Lettura dei file SMIL: 6 alla volta in parallelo (sui telefoni ogni lettura
+    // dallo zip può essere lenta; farle una dopo l'altra moltiplicava l'attesa).
+    const smilEntries = ncc.smilOrder.map(f => zip.find(normalizePath(baseDir + f)));
+    const smilTesti = new Array(smilEntries.length).fill(null);
+    let prossimo = 0, letti = 0;
+    const lavoratore = async () => {
+        while (prossimo < smilEntries.length) {
+            const k = prossimo++;
+            if (smilEntries[k]) smilTesti[k] = await zip.getText(smilEntries[k]);
+            letti++;
+            if (onProgress) onProgress(letti, smilEntries.length);
+        }
+    };
+    await Promise.all(Array.from({ length: Math.min(6, smilEntries.length) }, lavoratore));
+
     for (let i = 0; i < ncc.smilOrder.length; i++) {
         const smilPath = normalizePath(baseDir + ncc.smilOrder[i]);
         const key = smilPath.toLowerCase();
-        const entry = zip.find(smilPath);
+        const entry = smilEntries[i];
         smilFirstClip[key] = clips.length;
         smilIds[key] = {};
         if (!entry) continue;
-        const parsed = parseSmil(await zip.getText(entry));
+        const parsed = parseSmil(smilTesti[i]);
         const smilDir = dirOf(entry.name);
         const offset = clips.length;
         for (const c of parsed.clips) {
@@ -573,7 +588,6 @@ async function buildBook(zip, onProgress) {
         }
         // Gli id puntano allo spezzone (gli scarti per audio mancante sono rari)
         for (const id in parsed.idToClip) smilIds[key][id] = Math.min(offset + parsed.idToClip[id], clips.length);
-        if (onProgress) onProgress(i + 1, ncc.smilOrder.length);
     }
     const total = t;
 
@@ -1248,6 +1262,7 @@ function lastIndexAtOrBefore(list, t, key) {
         const iosIbrido = isIOS && !!ACtx;
         const INSTRADATO = 0, NORMALE = 1;
         let actx = null;
+        let cambioToken = 0;
 
         function ctxPronto() { return !!actx && actx.state === 'running'; }
 
@@ -1264,14 +1279,23 @@ function lastIndexAtOrBefore(list, t, key) {
             // iPhone a volte ignora lo spostamento su un lettore non ancora avviato:
             // appena il lettore è pronto o parte, controllo la posizione e la correggo.
             const giusta = () => posizione + (stavaSuonando ? (performance.now() - t0) / 1000 * currentRate() : 0);
+            // Il controllo vale solo per QUESTO cambio di lettore e per QUESTO capitolo:
+            // se nel frattempo c'è un altro cambio o si carica un altro capitolo, non fa nulla.
+            const mioCambio = ++cambioToken;
+            const mioCaricamento = loadToken;
+            const mioFile = a.dataset.src;
             const correggi = () => {
-                if (a !== P()) return;
+                if (mioCambio !== cambioToken || mioCaricamento !== loadToken || a !== P() || a.dataset.src !== mioFile) return;
                 const g = giusta();
                 if (Math.abs(a.currentTime - g) > 1) { try { a.currentTime = g; } catch (e) {} }
             };
             a.addEventListener('loadedmetadata', correggi, { once: true });
             a.addEventListener('playing', correggi, { once: true });
             setTimeout(correggi, 800);
+            setTimeout(() => {   // dopo qualche secondo il controllo non serve più: lo tolgo
+                a.removeEventListener('loadedmetadata', correggi);
+                a.removeEventListener('playing', correggi);
+            }, 4000);
             active = idx;          // prima cambio il lettore attivo, così la pausa del vecchio viene ignorata
             if (isPlaying) safePlay();
             da.pause();
@@ -1447,9 +1471,9 @@ function lastIndexAtOrBefore(list, t, key) {
                 riga1.textContent = `Capitolo ${bm.chapterIndex + 1} - ${bm.displayTime}`;
                 const riga2 = document.createElement('p');
                 riga2.className = "text-sm font-bold truncate";
-                riga2.textContent = bm.chapterTitle;
+                riga2.textContent = bm.nota ? `${bm.nota}: ${bm.chapterTitle}` : bm.chapterTitle;
                 go.append(riga1, riga2);
-                go.setAttribute('aria-label', `Vai al segnalibro ${index + 1}: ${bm.chapterTitle}, ${bm.displayTime}`);
+                go.setAttribute('aria-label', `Vai al segnalibro ${index + 1}${bm.nota ? ', ' + bm.nota : ''}: ${bm.chapterTitle}, ${bm.displayTime}`);
                 go.addEventListener('click', () => goToBookmark(index));
 
                 const del = document.createElement('button');
@@ -1462,31 +1486,6 @@ function lastIndexAtOrBefore(list, t, key) {
                 bookmarksList.appendChild(div);
             });
             renderTattileSegnalibri();
-        }
-
-        function askResume(chapterText, timeText) {
-            return new Promise((resolve) => {
-                const modal = document.getElementById('resumeModal');
-                const modalText = document.getElementById('resumeModalText');
-                const btnYes = document.getElementById('resumeModalYes');
-                const btnNo = document.getElementById('resumeModalNo');
-
-                modalText.textContent = `Trovato un ascolto precedente per questo libro.\nVuoi riprendere dal Capitolo ${chapterText} (${timeText})?`;
-                modal.classList.remove('hidden');
-                btnYes.focus();
-
-                if (isBlindMode) parla(`Vuoi riprendere l'ascolto dal capitolo ${chapterText}? Tocca sì o no sullo schermo.`, true);
-
-                const handleYes = () => { modal.classList.add('hidden'); cleanup(); resolve(true); };
-                const handleNo = () => { modal.classList.add('hidden'); cleanup(); resolve(false); };
-                const cleanup = () => {
-                    btnYes.removeEventListener('click', handleYes);
-                    btnNo.removeEventListener('click', handleNo);
-                };
-
-                btnYes.addEventListener('click', handleYes);
-                btnNo.addEventListener('click', handleNo);
-            });
         }
 
         addBookmarkBtn.addEventListener('click', () => {
@@ -1533,14 +1532,185 @@ function lastIndexAtOrBefore(list, t, key) {
             blindBookTitle.textContent = testo;
         }
 
+        // --- MEMORIA DELL'INDICE DEI LIBRI GIÀ APERTI ---
+        const VERSIONE_INDICE = 1;
+        const MAX_INDICI = 15;
+        function indiceChiave(file) {
+            return 'daisy_indice_' + file.name + '|' + file.size + '|' + file.lastModified;
+        }
+        function leggiIndiceSalvato(chiave, zipAperto) {
+            try {
+                const dati = JSON.parse(lsGet(chiave));
+                if (!dati || dati.v !== VERSIONE_INDICE || !dati.book) return null;
+                const b = dati.book;
+                if (!Array.isArray(b.segments) || !b.segments.length || !Array.isArray(b.chapters)) return null;
+                // controllo che i file audio indicati esistano davvero nello zip
+                for (const s of b.segments) if (!zipAperto.find(s.src)) return null;
+                return b;
+            } catch (e) { return null; }
+        }
+        function salvaIndice(chiave, b) {
+            try {
+                if (!b || !b.segments || !b.segments.length) return;
+                lsSet(chiave, JSON.stringify({ v: VERSIONE_INDICE, book: b }));
+                // tengo solo gli indici dei libri aperti più di recente
+                let elenco = [];
+                try { elenco = JSON.parse(lsGet('daisy_indici_elenco')) || []; } catch (e) {}
+                elenco = elenco.filter(k => k !== chiave);
+                elenco.push(chiave);
+                while (elenco.length > MAX_INDICI) {
+                    const vecchia = elenco.shift();
+                    try { localStorage.removeItem(vecchia); } catch (e) {}
+                }
+                lsSet('daisy_indici_elenco', JSON.stringify(elenco));
+            } catch (e) { /* memoria piena: pazienza, la prossima volta si rilegge */ }
+        }
+
+        // ================================================================
+        // LIBRO IN MEMORIA: il libro caricato viene copiato nella memoria interna
+        // dell'app (un libro alla volta). Alla riapertura si ritrova già pronto,
+        // nel punto in cui si era rimasti, senza doverlo ricaricare.
+        // ================================================================
+        const CHIAVE_LIBRO = 'daisy_libro_corrente';
+        let copiaToken = 0;
+
+        function memoriaDisponibile() {
+            return !!(navigator.storage && navigator.storage.getDirectory);
+        }
+
+        // Scrive il file nella memoria dell'app. Prova il metodo normale; se il browser
+        // non lo ha (es. iPhone con iOS 17) usa un "lavoratore" in sottofondo.
+        async function scriviInMemoria(cartella, nome, file) {
+            const fh = await cartella.getFileHandle(nome, { create: true });
+            if (fh.createWritable) {
+                const w = await fh.createWritable();
+                await w.write(file);
+                await w.close();
+            } else {
+                const codice = `
+                    onmessage = async (e) => {
+                        const { nome, file } = e.data;
+                        try {
+                            const cartella = await navigator.storage.getDirectory();
+                            const fh = await cartella.getFileHandle(nome, { create: true });
+                            const h = await fh.createSyncAccessHandle();
+                            await h.truncate(0);
+                            const PEZZO = 4 * 1024 * 1024;
+                            let pos = 0;
+                            while (pos < file.size) {
+                                const buf = new Uint8Array(await file.slice(pos, pos + PEZZO).arrayBuffer());
+                                h.write(buf, { at: pos });
+                                pos += buf.length;
+                            }
+                            await h.flush();
+                            await h.close();
+                            postMessage({ ok: true });
+                        } catch (err) {
+                            postMessage({ ok: false, errore: String(err) });
+                        }
+                    };`;
+                const url = URL.createObjectURL(new Blob([codice], { type: 'text/javascript' }));
+                const lavoratore = new Worker(url);
+                const esito = await new Promise(resolve => {
+                    lavoratore.onmessage = ev => resolve(ev.data);
+                    lavoratore.onerror = ev => resolve({ ok: false, errore: ev.message });
+                    lavoratore.postMessage({ nome, file });
+                });
+                lavoratore.terminate();
+                URL.revokeObjectURL(url);
+                if (!esito.ok) throw new Error(esito.errore || 'scrittura non riuscita');
+            }
+            const copia = await fh.getFile();
+            if (copia.size !== file.size) throw new Error('copia incompleta');
+        }
+
+        async function salvaLibroInMemoria(file, chiave) {
+            if (!memoriaDisponibile()) return;
+            const mio = ++copiaToken;
+            const nome = 'libro-' + Date.now() + '.zip';
+            let cartella;
+            try {
+                cartella = await navigator.storage.getDirectory();
+                if (navigator.storage.estimate) {
+                    const st = await navigator.storage.estimate();
+                    if (st.quota && st.quota - (st.usage || 0) < file.size * 1.05) {
+                        console.warn('Spazio insufficiente per tenere il libro in memoria');
+                        return;
+                    }
+                }
+                await scriviInMemoria(cartella, nome, file);
+                if (mio !== copiaToken) { await cartella.removeEntry(nome).catch(() => {}); return; }
+                lsSet(CHIAVE_LIBRO, JSON.stringify({ nomeFile: nome, size: file.size, chiave }));
+                // un libro alla volta: cancello le copie precedenti
+                for await (const [n] of cartella.entries()) {
+                    if (n !== nome && n.startsWith('libro-')) await cartella.removeEntry(n).catch(() => {});
+                }
+                // chiedo al telefono di non cancellare la memoria dell'app
+                if (navigator.storage.persist) navigator.storage.persist().catch(() => {});
+            } catch (e) {
+                console.warn('Copia del libro in memoria non riuscita:', e);
+                if (cartella) cartella.removeEntry(nome).catch(() => {});
+            }
+        }
+
+        async function riapriLibroSalvato() {
+            if (!memoriaDisponibile()) return;
+            let dati;
+            try { dati = JSON.parse(lsGet(CHIAVE_LIBRO)); } catch (e) { return; }
+            if (!dati || !dati.nomeFile) return;
+            try {
+                const cartella = await navigator.storage.getDirectory();
+                const file = await (await cartella.getFileHandle(dati.nomeFile)).getFile();
+                if (file.size !== dati.size) return;
+                await apriLibro(file, dati.chiave, true, false);
+            } catch (e) {
+                console.warn('Libro in memoria non disponibile:', e);
+                mostraTitolo('Nessun libro caricato');
+            }
+        }
+
+        // Domanda "continua o da capo?": compare solo aprendo un libro diverso da quello corrente
+        function chiediRipresa(capitolo, titoloCap, tempo) {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('riprendiModal');
+                const testo = document.getElementById('riprendiTesto');
+                const bSi = document.getElementById('riprendiContinua');
+                const bNo = document.getElementById('riprendiDaCapo');
+                const frase = `Eri arrivato al capitolo ${capitolo}: ${titoloCap}, ${tempo}. Vuoi continuare da lì o ricominciare da capo?`;
+                testo.textContent = frase;
+                modal.classList.remove('hidden');
+                // il cursore di VoiceOver va sulla domanda, poi si scorre ai due tasti
+                setTimeout(() => testo.focus(), 50);
+                if (isBlindMode && !touchMode) parla(frase, true);
+                const fine = (risposta) => {
+                    modal.classList.add('hidden');
+                    bSi.removeEventListener('click', si);
+                    bNo.removeEventListener('click', no);
+                    resolve(risposta);
+                };
+                const si = () => fine(true);
+                const no = () => fine(false);
+                bSi.addEventListener('click', si);
+                bNo.addEventListener('click', no);
+            });
+        }
+
+        let chiaveCorrente = null;   // libro che si sta leggendo ora
+
         async function gestisciCaricamentoFile(event) {
             const file = event.target.files[0];
             event.target.value = ''; // permette di ricaricare lo stesso file
             if (!file) return;
+            const chiave = indiceChiave(file);
+            const altroLibro = chiave !== chiaveCorrente;
+            const ok = await apriLibro(file, chiave, false, altroLibro);
+            if (ok) salvaLibroInMemoria(file, chiave);   // in sottofondo, mentre si ascolta
+        }
 
+        async function apriLibro(file, chiaveIndice, daMemoria, chiedi) {
             if (isPlaying) pausePlayback();
-            mostraTitolo("Caricamento in corso...");
-            if (isBlindMode) parla("Sto caricando il libro, attendi.");
+            mostraTitolo(daMemoria ? "Apertura del libro..." : "Caricamento in corso...");
+            if (isBlindMode && !daMemoria) parla("Sto caricando il libro, attendi.");
 
             clearAudio();
             book = null;
@@ -1554,9 +1724,15 @@ function lastIndexAtOrBefore(list, t, key) {
                     await caricaScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
                     zip.jszip = await new JSZip().loadAsync(file);
                 }
-                book = await buildBook(zip, (fatti, totali) => {
-                    mostraTitolo(`Caricamento in corso... ${Math.round(fatti / totali * 100)}%`);
-                });
+                // Se questo libro è già stato aperto, uso l'indice salvato (capitoli e durate)
+                // invece di rileggere tutti i file SMIL dallo zip: l'apertura è quasi immediata.
+                book = leggiIndiceSalvato(chiaveIndice, zip);
+                if (!book) {
+                    book = await buildBook(zip, (fatti, totali) => {
+                        mostraTitolo(`Caricamento in corso... ${Math.round(fatti / totali * 100)}%`);
+                    });
+                    salvaIndice(chiaveIndice, book);
+                }
             } catch (error) {
                 console.error("Errore:", error);
                 book = null;
@@ -1565,13 +1741,12 @@ function lastIndexAtOrBefore(list, t, key) {
                 else if (error && error.message === 'NCC_MANCANTE') msg = "Formato non supportato";
                 mostraTitolo(msg);
                 if (isBlindMode) parla(msg);
-                return;
+                return false;
             }
 
             if (book.missingAudio.length) console.warn('File audio mancanti nello zip:', book.missingAudio);
 
             mostraTitolo(book.title);
-            if (isBlindMode) parla("Libro caricato: " + book.title, true);
             bookTimeTotal.textContent = formatTime(book.total);
             uiTotalChapters.textContent = book.chapters.length;
             loadBookmarks();
@@ -1580,31 +1755,64 @@ function lastIndexAtOrBefore(list, t, key) {
                 uiChapterTitle.textContent = "Nessun capitolo trovato";
                 chapterInfoSection.classList.remove('hidden');
                 book = null;
-                return;
+                return false;
             }
 
-            uploadLabel.classList.add('hidden');
-            blindUploadLabel.classList.add('hidden');
+            // il tasto per caricare un altro libro resta sempre disponibile
+            uploadLabel.querySelector('h3').textContent = 'Carica un altro libro';
+            blindUploadLabel.querySelector('span').textContent = 'Carica un altro libro';
+            if (touchMode) blindUploadLabel.classList.add('hidden');
             chapterInfoSection.classList.remove('hidden');
 
+            chiaveCorrente = chiaveIndice;
+
+            // Il libro corrente riparte da dove si era rimasti senza chiedere.
+            // Aprendo un ALTRO libro già iniziato, si chiede: continuare o ricominciare da capo?
             currentChapterIndex = 0;
             segIdx = 0;
             let startT = 0;
+            let daCapo = false;
             const lastT = getLastPosition();
             if (lastT !== null && lastT > 1) {
-                const idx = lastIndexAtOrBefore(book.chapters, lastT, 't');
-                const inCh = lastT - book.chapters[idx].t;
-                const wantsToResume = await askResume(idx + 1, formatTime(inCh));
-                if (wantsToResume) { startT = lastT; currentChapterIndex = idx; }
+                startT = Math.min(lastT, book.total - 0.5);
+                currentChapterIndex = lastIndexAtOrBefore(book.chapters, startT, 't');
+                if (chiedi) {
+                    const ch0 = book.chapters[currentChapterIndex];
+                    const inCh = startT - ch0.t;
+                    const continua = await chiediRipresa(currentChapterIndex + 1, ch0.title, formatTimeVoce(inCh));
+                    if (!continua) {
+                        // segnalibro automatico: il punto raggiunto non va perso
+                        bookmarks.push({
+                            t: startT,
+                            chapterIndex: currentChapterIndex,
+                            chapterTitle: ch0.title,
+                            time: inCh,
+                            displayTime: formatTime(inCh),
+                            nota: 'Punto prima di ricominciare'
+                        });
+                        saveBookmarks();
+                        startT = 0;
+                        currentChapterIndex = 0;
+                        daCapo = true;
+                    }
+                }
             }
 
             isPlaying = false;
             updatePlayIcon();
-            await loadSegment(lastIndexAtOrBefore(book.segments, startT, 'tStart'),
-                              startT - book.segments[lastIndexAtOrBefore(book.segments, startT, 'tStart')].tStart, false);
+            const iSeg = lastIndexAtOrBefore(book.segments, startT, 'tStart');
+            await loadSegment(iSeg, startT - book.segments[iSeg].tStart, false);
+            if (daCapo) saveLastPosition(true);   // la nuova posizione è l'inizio del libro
             updateChapterLabels();
             updateProgressUI();
             mostraComandiTattili();
+
+            const ch = book.chapters[currentChapterIndex];
+            const dove = startT > 1
+                ? `Pronto a continuare dal capitolo ${currentChapterIndex + 1}: ${ch.title}. Premi Play.`
+                : 'Pronto. Premi Play per iniziare.';
+            if (isBlindMode) parla(`Libro: ${book.title}. ${dove}`, true);
+            return true;
         }
 
         fileInput.addEventListener('change', gestisciCaricamentoFile);
@@ -1759,7 +1967,7 @@ function lastIndexAtOrBefore(list, t, key) {
                 const vai = document.createElement('button');
                 vai.className = 'flex-1 bg-[#131b26] rounded-xl text-left text-base p-3 border border-gray-700';
                 vai.dataset.segnalibro = i;
-                vai.textContent = `Ascolta segnalibro ${i + 1}: capitolo ${bm.chapterIndex + 1}, ${bm.chapterTitle}, ${formatTimeVoce(bm.time)}`;
+                vai.textContent = `Ascolta segnalibro ${i + 1}${bm.nota ? ', ' + bm.nota : ''}: capitolo ${bm.chapterIndex + 1}, ${bm.chapterTitle}, ${formatTimeVoce(bm.time)}`;
                 vai.addEventListener('click', () => {
                     chiudiLista(tSegnaBtn, tSegnaLista);
                     goToBookmark(i);
@@ -1956,7 +2164,7 @@ function lastIndexAtOrBefore(list, t, key) {
                     } else {
                         let txt = "Hai " + bookmarks.length + (bookmarks.length === 1 ? " segnalibro. " : " segnalibri. ");
                         bookmarks.forEach((bm, i) => {
-                            txt += "Numero " + (i + 1) + ", " + bm.chapterTitle + ". ";
+                            txt += "Numero " + (i + 1) + ", " + (bm.nota ? bm.nota + ", " : "") + bm.chapterTitle + ". ";
                         });
                         parla(txt);
                     }
@@ -2017,6 +2225,9 @@ function lastIndexAtOrBefore(list, t, key) {
         } else {
             blindBtnParla.style.display = 'none';
         }
+
+        // All'apertura dell'app ritrovo il libro che si stava ascoltando
+        riapriLibroSalvato();
 
     </script>
     <script>
